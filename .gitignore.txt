@@ -5,12 +5,12 @@
 
 # User-specific files
 
-.vs\GDApp
-GDApp\GDApp\bin
-GDApp\GDApp\obj
-GDAppContent\obj
-GDLibrary\bin
-GDLibrary\obj
+.vs/GDApp/
+GDApp/GDApp/bin/
+GDApp/GDApp/obj/
+GDAppContent/obj/
+GDLibrary/bin/
+GDLibrary/obj/
 
 *.rsuser
 *.suo
