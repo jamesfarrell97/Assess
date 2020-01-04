@@ -3,3 +3,7 @@
 ################################################################################
 
 /.vs/GDApp
+/GDApp/GDApp/bin/x86/Debug
+/GDApp/GDApp/obj/x86/Debug
+/GDLibrary/bin/x86/Debug
+/GDLibrary/obj/x86/Debug
