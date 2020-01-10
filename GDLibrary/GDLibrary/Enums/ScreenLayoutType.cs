@@ -24,5 +24,6 @@ namespace GDLibrary
         MultiFullCycle,
         MultiTrackFirstPerson,
         FirstPersonCollidable,
+        Orbit,
     }
 }

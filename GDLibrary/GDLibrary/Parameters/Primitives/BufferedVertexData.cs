@@ -48,7 +48,7 @@ namespace GDLibrary
         }
         #endregion
 
-        //allows developer to pass in vertices AND buffer - more efficient since buffer is defined ONCE outside of the object instead of a new VertexBuffer for EACH instance of the class
+        #region Constructor
         public BufferedVertexData(
             GraphicsDevice graphicsDevice, 
             T[] vertices, 
@@ -59,11 +59,10 @@ namespace GDLibrary
             this.graphicsDevice = graphicsDevice;
             this.VertexBuffer = vertexBuffer;
             
-            //set data on the reserved space
-            this.vertexBuffer.SetData<T>(this.Vertices);
+            //Set data on the reserved space
+            this.vertexBuffer.SetData(this.Vertices);
         }
     
-        //buffer is created INSIDE the class so each class has a buffer - not efficient
         public BufferedVertexData(
             GraphicsDevice graphicsDevice, 
             T[] vertices, 
@@ -73,34 +72,38 @@ namespace GDLibrary
             this.graphicsDevice = graphicsDevice;
             this.VertexBuffer = new VertexBuffer(graphicsDevice, typeof(T), vertices.Length, BufferUsage.None);
             
-            //set data on the reserved space
-            this.vertexBuffer.SetData<T>(this.Vertices);
+            //Set data on the reserved space
+            this.vertexBuffer.SetData(this.Vertices);
         }
+        #endregion
 
+        #region Methods
         public void SetData(T[] vertices)
         {
             this.Vertices = vertices;
-            //set data on the reserved space
-            this.vertexBuffer.SetData<T>(this.Vertices);
+
+            //Set data on the reserved space
+            this.vertexBuffer.SetData(this.Vertices);
         }
 
         public override void Draw(GameTime gameTime, Effect effect)
         {
-            //this is what we want GFX to draw
+            //This is what we want GFX to draw
             effect.GraphicsDevice.SetVertexBuffer(this.vertexBuffer);
 
-            //draw!
+            //Draw
             effect.GraphicsDevice.DrawPrimitives(this.PrimitiveType, 0, this.PrimitiveCount);           
         }
 
         public new object Clone()
         {
             return new BufferedVertexData<T>(
-                this.graphicsDevice,  //shallow - reference
-                this.Vertices, //shallow - reference
-                this.PrimitiveType, //struct - deep
-                this.PrimitiveCount
-            ); //deep - primitive
+                this.graphicsDevice,    //Shallow - Reference
+                this.Vertices,          //Shallow - Reference
+                this.PrimitiveType,     //Deep - Struct
+                this.PrimitiveCount     //Deep - Primitive
+            );
         }
+        #endregion
     }
 }

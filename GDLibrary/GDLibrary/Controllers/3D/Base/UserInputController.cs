@@ -9,7 +9,6 @@ Fixes:			None
 
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
-using System;
 
 namespace GDLibrary
 {

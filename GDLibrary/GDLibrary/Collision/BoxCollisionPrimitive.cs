@@ -5,8 +5,9 @@ namespace GDLibrary
     public class BoxCollisionPrimitive : ICollisionPrimitive
     {
         #region Variables
-        private static Vector3 min = Vector3.Zero;
-        private static Vector3 max = new Vector3(0.975f, 0.975f, 0.975f);
+        private static Vector3 min = new Vector3(0.99f, 0.99f, 0.99f) * -1.0f/2.0f;
+        private static Vector3 max = new Vector3(0.99f, 0.99f, 0.99f) *  1.0f/2.0f;
+
         private BoundingBox boundingBox;
         private BoundingBox originalBoundingBox;
         #endregion

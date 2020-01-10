@@ -9,8 +9,8 @@ Comments:       Should consider making this class a Singleton because of the sta
 */
 
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework;
 using System;
 
 namespace GDLibrary
@@ -20,25 +20,26 @@ namespace GDLibrary
         public Cue Cue;
         public AudioEmitter Emitter;
     }
+
     public class SoundManager : PausableGameComponent, IDisposable
     {
-        #region Fields
-        //statics 
+        #region Statics
         private static readonly float DefaultVolume = 0.5f;
+        #endregion
 
+        #region Fields
         protected AudioEngine audioEngine;
         protected WaveBank waveBank;
         protected SoundBank soundBank;
 
-        protected List<Cue3D> cueList3D;
+        protected List<Cue> playingCues2D;
+        protected List<Cue3D> playingCues3D;
+        protected HashSet<string> playSet2D;
         protected HashSet<string> playSet3D;
 
         protected AudioListener audioListener;
-        private List<Cue> cueList2D;
-        private List<string> cueNameList2D;
         protected List<string> categories;
         private float volume;
- 
         #endregion
 
         #region Properties
@@ -55,26 +56,26 @@ namespace GDLibrary
         }
         #endregion
 
-
-        //See http://rbwhitaker.wikidot.com/audio-tutorials
-        //See http://msdn.microsoft.com/en-us/library/ff827590.aspx
-        //See http://msdn.microsoft.com/en-us/library/dd940200.aspx
-
-        public SoundManager(Game game, EventDispatcher eventDispatcher, StatusType statusType, 
-            string folderPath,  string audioEngineStr, string waveBankStr, string soundBankStr)
-            : base(game, eventDispatcher, statusType)
-        {
+        #region Constructors
+        public SoundManager(
+            Game game, 
+            EventDispatcher eventDispatcher, 
+            StatusType statusType, 
+            string folderPath,  
+            string audioEngineStr, 
+            string waveBankStr, 
+            string soundBankStr
+        ) : base(game, eventDispatcher, statusType) {
             this.audioEngine = new AudioEngine(@"" + folderPath + "/" + audioEngineStr);
             this.waveBank = new WaveBank(audioEngine, @"" + folderPath + "/" + waveBankStr);
             this.soundBank = new SoundBank(audioEngine, @"" + folderPath + "/" + soundBankStr);
-            this.cueList3D = new List<Cue3D>();
+            this.playingCues2D = new List<Cue>();
+            this.playingCues3D = new List<Cue3D>();
+            this.playSet2D = new HashSet<string>();
             this.playSet3D = new HashSet<string>();
             this.audioListener = new AudioListener();
-
-            this.cueList2D = new List<Cue>();
-            this.cueNameList2D = new List<string>();
         }
-
+        #endregion
 
         #region Event Handling
         protected override void RegisterForEventHandling(EventDispatcher eventDispatcher)
@@ -82,169 +83,237 @@ namespace GDLibrary
             eventDispatcher.GlobalSoundChanged += EventDispatcher_GlobalSoundChanged;
             eventDispatcher.Sound3DChanged += EventDispatcher_Sound3DChanged;
             eventDispatcher.Sound2DChanged += EventDispatcher_Sound2DChanged;
+
             base.RegisterForEventHandling(eventDispatcher);
         }
 
         protected virtual void EventDispatcher_GlobalSoundChanged(EventData eventData)
         {
+            //Mute Event
             if (eventData.EventType == EventActionType.OnMute)
             {
-                //any 2D sounds
+                //2D sounds
                 SoundEffect.MasterVolume = 0;
-                //3d sounds
-                //construct event to pass in volume (e.g. 0.5f) and category (game_sound_effects) that you group the sounds by in XACT
-                //See https://www.youtube.com/watch?v=eG-FW6RAyHU
+
+                //3D sounds
                 float volume = (float)eventData.AdditionalParameters[0];
                 string soundCategory = (string)eventData.AdditionalParameters[1];
                 SetVolume(volume, soundCategory);
-
             }
+
+            //UnMute Evenet
             else if (eventData.EventType == EventActionType.OnUnMute)
             {
-                //any 2D sounds
+                //2D sounds
                 SoundEffect.MasterVolume = DefaultVolume;
-                //3d sounds
+
+                //3D sounds
                 float volume = (float)eventData.AdditionalParameters[0];
                 string soundCategory = (string)eventData.AdditionalParameters[1];
                 SetVolume(volume, soundCategory);
-
             }
-            else if (eventData.EventType == EventActionType.OnVolumeChange)
+
+            //VolumeUp Event
+            else if (eventData.EventType == EventActionType.OnVolumeUp)
             {
-                //any 2D sounds
+                //2D sounds
                 float volumeDelta = (float)eventData.AdditionalParameters[0];
                 SoundEffect.MasterVolume = MathHelper.Clamp(SoundEffect.MasterVolume + volumeDelta, 0, 1);
-                //3d sounds
+
+                //3D sounds
                 string soundCategory = (string)eventData.AdditionalParameters[1];
                 ChangeVolume(volumeDelta, soundCategory);
             }
-        }
 
-        protected virtual void EventDispatcher_Sound3DChanged(EventData eventData)
-        {
-            //control 3D sounds through events
-            if (eventData.EventType != EventActionType.OnStopAll)
+            //VolumeDown Event
+            else if (eventData.EventType == EventActionType.OnVolumeDown)
             {
-                string cueName = eventData.AdditionalParameters[0] as string;
+                //2D sounds
+                float volumeDelta = (float)eventData.AdditionalParameters[0];
+                SoundEffect.MasterVolume = MathHelper.Clamp(SoundEffect.MasterVolume - volumeDelta, 0, 1);
 
-                if (eventData.EventType == EventActionType.OnPlay)
-                {
-                    //what object generated the sound?
-                    AudioEmitter audioEmitter = eventData.AdditionalParameters[1] as AudioEmitter;
-                    this.Play3DCue(cueName, audioEmitter);
-                }
-                else if (eventData.EventType == EventActionType.OnPause)
-                    this.Pause3DCue(cueName);
-                else if (eventData.EventType == EventActionType.OnResume)
-                    this.Resume3DCue(cueName);
-                else if (eventData.EventType == EventActionType.OnStop)
-                    this.Stop3DCue(cueName, AudioStopOptions.Immediate);
-            }
-            else //OnStopAll - notice that the AdditionalParameters[0] parameter is now used to send the stop option (vs. above where it sent the cue name). be careful!
-            {
-                //since we can only pass refereneces in AdditionalParameters and AudioStopOption is an enum (i.e. a primitive type) then we need to hack the code a little
-                if ((int)eventData.AdditionalParameters[0] == 0)
-                    this.StopAll3DCues(AudioStopOptions.Immediate);
-                else
-                    this.StopAll3DCues(AudioStopOptions.AsAuthored);
+                //3D sounds
+                string soundCategory = (string)eventData.AdditionalParameters[1];
+                SetVolume(SoundEffect.MasterVolume, soundCategory);
             }
         }
 
+        //2D Sound Changed
         protected virtual void EventDispatcher_Sound2DChanged(EventData eventData)
         {
+            //ID - Name
             string cueName = eventData.AdditionalParameters[0] as string;
 
+            //OnPlay Event
             if (eventData.EventType == EventActionType.OnPlay)
                 this.PlayCue(cueName);
+
+            //OnPause Event
             else if (eventData.EventType == EventActionType.OnPause)
                 this.PauseCue(cueName);
+
+            //OnResume Event
             else if (eventData.EventType == EventActionType.OnResume)
                 this.ResumeCue(cueName);
-            else //OnStop
+
+            else if (eventData.EventType == EventActionType.OnTrackVolumeChange)
             {
-                //since we can only pass refereneces in AdditionalParameters and AudioStopOption is an enum (i.e. a primitive type) then we need to hack the code a little
+                string catType = (string)eventData.AdditionalParameters[0];
+                float volume = (float)eventData.AdditionalParameters[1];
+
+                ChangeVolume(volume, catType);
+            }
+
+            //OnStop Event
+            else
+            {
+                //Sender
                 if ((int)eventData.AdditionalParameters[1] == 0)
                     this.StopCue(cueName, AudioStopOptions.Immediate);
                 else
                     this.StopCue(cueName, AudioStopOptions.AsAuthored);
             }
         }
+
+        //3D Sound Changed
+        protected virtual void EventDispatcher_Sound3DChanged(EventData eventData)
+        {
+            //If != OnStopAll Event
+            if (eventData.EventType != EventActionType.OnStopAll)
+            {
+                //ID - Name
+                string cueName = eventData.AdditionalParameters[0] as string;
+
+                //OnPlay Event
+                if (eventData.EventType == EventActionType.OnPlay)
+                {
+                    //Sender
+                    AudioEmitter audioEmitter = eventData.AdditionalParameters[1] as AudioEmitter;
+                    this.Play3DCue(cueName, audioEmitter);
+                }
+
+                //OnPause Event
+                else if (eventData.EventType == EventActionType.OnPause)
+                    this.Pause3DCue(cueName);
+
+                //OnResume Event
+                else if (eventData.EventType == EventActionType.OnResume)
+                    this.Resume3DCue(cueName);
+
+                //OnStop Event
+                else if (eventData.EventType == EventActionType.OnStop)
+                    this.Stop3DCue(cueName, AudioStopOptions.Immediate);
+            }
+
+            //OnStopAll Event
+            else
+            {
+                if ((int)eventData.AdditionalParameters[0] == 0)
+                    this.StopAll3DCues(AudioStopOptions.Immediate);
+                else
+                    this.StopAll3DCues(AudioStopOptions.AsAuthored);
+            }
+        }
         #endregion
 
-        /*************** Play, Pause, Resume, and Stop 2D sound cues ***************/
-
-        // Plays a 2D cue e.g menu, game music etc
+        #region 2D Cues
+        //Plays a 2D cue - Menu/Game Music etc.
         public void PlayCue(string cueName)
         {
-            if (!this.cueNameList2D.Contains(cueName)) //if we have not already been asked to play this in the current update loop then play it
-            {
+            //if (!this.playSet2D.Contains(cueName))
+            //{
+                this.playSet2D.Add(cueName);
                 Cue cue = this.soundBank.GetCue(cueName);
-                cue.Play();
-                this.cueList2D.Add(cue);
-                this.cueNameList2D.Add(cueName);
-            }
+
+                if (cue != null)
+                {
+                    this.playingCues2D.Add(cue);
+                    cue.Play();
+                }
+            //}
         }
-        //pauses a 2D cue
+
+        //Pauses a 2D cue
         public void PauseCue(string cueName)
         {
-            Cue cue = this.soundBank.GetCue(cueName);
-            if ((cue != null) && (cue.IsPlaying))
+            //If we have not already been asked to play this in the current update loop then play it
+            if (this.playSet2D.Contains(cueName))
             {
-                cue.Pause();
-                this.cueList2D.Remove(cue);
-                this.cueNameList2D.Remove(cue.Name);
+                this.playSet2D.Remove(cueName);
+                Cue cue = this.playingCues2D.Find(x => x.Name.Equals(cueName));
+
+                if (cue != null)
+                {
+                    this.playingCues2D.Remove(cue);
+                    cue.Pause();
+                }
             }
         }
 
-        //resumes a paused 2D cue
+        //Resumes a paused 2D cue
         public void ResumeCue(string cueName)
         {
-            Cue cue = this.soundBank.GetCue(cueName);
-            if ((cue != null) && (cue.IsPaused))
+            if (!this.playSet2D.Contains(cueName))
             {
-                cue.Resume();
-                this.cueList2D.Add(cue);
-                this.cueNameList2D.Add(cueName);
+                this.playSet2D.Add(cueName);
+                Cue cue = this.soundBank.GetCue(cueName);
+
+                if (cue != null)
+                {
+                    this.playingCues2D.Add(cue);
+                    cue.Resume();
+                }
             }
         }
 
-        //stop a 2D cue - AudioStopOptions: AsAuthored and Immediate
+        //Stops a 2D cue - AudioStopOptions: AsAuthored and Immediate
         public void StopCue(string cueName, AudioStopOptions audioStopOptions)
         {
-            Cue cue = this.soundBank.GetCue(cueName);
-            if ((cue != null) && (cue.IsPlaying))
+            if (this.playSet2D.Contains(cueName))
             {
-                cue.Stop(audioStopOptions);
-                this.cueList2D.Remove(cue);
-                this.cueNameList2D.Remove(cue.Name);
+                this.playSet2D.Remove(cueName);
+                Cue cue = this.playingCues2D.Find(x => x.Name.Equals(cueName));
+
+                if (cue != null)
+                {
+                    this.playingCues2D.Remove(cue);
+                    cue.Stop(audioStopOptions);
+                }
             }
         }
+        #endregion
 
-        /*************** Play, Pause, Resume, and Stop 3D sound cues ***************/
-
-            // Plays a cue to be heard from the perspective of a player or camera in the game i.e. in 3D
+        #region 3D Cues
+        //Plays a cue to be heard from the perspective of a player or camera in the game i.e. in 3D
         public void Play3DCue(string cueName, AudioEmitter audioEmitter)
         {
+            //Retrieve sound from sound bank
+            Cue3D sound = new Cue3D
+            {
+                Cue = soundBank.GetCue(cueName)
+            };
 
-            Cue3D sound = new Cue3D();
-            sound.Cue = soundBank.GetCue(cueName);
-            if (!this.playSet3D.Contains(cueName)) //if we have not already been asked to play this in the current update loop then play it
+            //If we have not already been asked to play this in the current update loop then play it
+            if (!this.playSet3D.Contains(cueName))
             {
                 sound.Emitter = audioEmitter;
                 sound.Cue.Apply3D(audioListener, audioEmitter);
                 sound.Cue.Play();
-                this.cueList3D.Add(sound);
+
+                this.playingCues3D.Add(sound);
                 this.playSet3D.Add(cueName);
             }
         }
-        //pause a 3D cue
+
+        //Pause a 3D cue
         public void Pause3DCue(string cueName)
         {
             Cue3D cue3D = Get3DCue(cueName);
             if ((cue3D != null) && (cue3D.Cue.IsPlaying))
                 cue3D.Cue.Pause();
         }
-        //resumes a paused 3D cue
+
+        //Resumes a paused 3D cue
         public void Resume3DCue(string cueName)
         {
             Cue3D cue3D = Get3DCue(cueName);
@@ -252,7 +321,7 @@ namespace GDLibrary
                 cue3D.Cue.Resume();
         }
 
-        //stop a 3D cue - AudioStopOptions: AsAuthored and Immediate
+        //Stop a 3D cue - AudioStopOptions: AsAuthored and Immediate
         public void Stop3DCue(string cueName, AudioStopOptions audioStopOptions)
         {
             Cue3D cue3D = Get3DCue(cueName);
@@ -260,31 +329,37 @@ namespace GDLibrary
             {
                 cue3D.Cue.Stop(audioStopOptions);
                 this.playSet3D.Remove(cue3D.Cue.Name);
-                this.cueList3D.Remove(cue3D);
+                this.playingCues3D.Remove(cue3D);
             }
         }
-        //stops all 3D cues - AudioStopOptions: AsAuthored and Immediate
+
+        //Stops all 3D cues - AudioStopOptions: AsAuthored and Immediate
         public void StopAll3DCues(AudioStopOptions audioStopOptions)
         {
-            foreach (Cue3D cue3D in this.cueList3D)
+            List<Cue3D> copy = this.playingCues3D;
+
+            foreach (Cue3D cue3D in copy)
             {
                 cue3D.Cue.Stop(audioStopOptions);
-                this.cueList3D.Remove(cue3D);
+                this.playingCues3D.Remove(cue3D);
                 this.playSet3D.Remove(cue3D.Cue.Name);
             }
         }
-        //retrieves a 3D cue from the list of currently active cues
+
+        //Retrieves a 3D cue from the list of currently active cues
         public Cue3D Get3DCue(string name)
         {
-            foreach (Cue3D cue3D in this.cueList3D)
+            foreach (Cue3D cue3D in this.playingCues3D)
             {
                 if (cue3D.Cue.Name.Equals(name))
                     return cue3D;
             }
             return null;
         }
+        #endregion
 
-        //we can control the volume for each category in the sound bank (i.e. diegetic and non-diegetic)
+        #region Volume
+        //We can control the volume for each category in the sound bank (i.e. diegetic and non-diegetic)
         public void SetVolume(float newVolume, string soundCategoryStr)
         {
             try
@@ -292,15 +367,15 @@ namespace GDLibrary
                 AudioCategory soundCategory = this.audioEngine.GetCategory(soundCategoryStr);
                 if (soundCategory != null)
                 {
-                    //requested volume will be in appropriate range (0-1)
+                    //Requested volume will be in appropriate range (0-1)
                     this.volume = MathHelper.Clamp(newVolume, 0, 1);
                     soundCategory.SetVolume(this.volume);
                 }
             }
-            catch(InvalidOperationException e)
+            catch (InvalidOperationException e)
             {
-                System.Diagnostics.Debug.WriteLine(e.Message + ": Check that category (" + soundCategoryStr + ") exists in your Xact file?");
-            }   
+                System.Diagnostics.Debug.WriteLine("Does category (soundCategoryStr) exist in your Xact file?" + e);
+            }
         }
 
         public void ChangeVolume(float deltaVolume, string soundCategoryStr)
@@ -310,69 +385,67 @@ namespace GDLibrary
                 AudioCategory soundCategory = this.audioEngine.GetCategory(soundCategoryStr);
                 if (soundCategory != null)
                 {
-                    //requested volume will be in appropriate range (0-1)
+                    //Requested volume will be in appropriate range (0-1)
                     this.volume = MathHelper.Clamp(this.volume + deltaVolume, 0, 1);
-                    soundCategory.SetVolume(this.volume);          
+                    soundCategory.SetVolume(this.volume);
                 }
             }
             catch (InvalidOperationException e)
             {
-                System.Diagnostics.Debug.WriteLine(e.Message + ": Check that category (" + soundCategoryStr + ") exists in your Xact file?");
+                System.Diagnostics.Debug.WriteLine("Does category (soundCategoryStr) exist in your Xact file?" + e);
             }
         }
+        #endregion
 
-     
+        #region Methods
         //Called by the listener to update relative positions (i.e. everytime the 1st Person camera moves it should call this method so that the 3D sounds heard reflect the new camera position)
-        public void UpdateListenerPosition(Vector3 position, Vector3 look, Vector3 up)
+        public void UpdateListenerPosition(Vector3 position, Vector3 forward, Vector3 up)
         {
             this.audioListener.Position = position;
-            this.audioListener.Forward = look;
+            this.audioListener.Forward = forward;
             this.audioListener.Up = up;
         }
 
-        // Pause all playing sounds
+        //Pause All Playing Sounds
         public void PauseAll()
         {
-            foreach (Cue3D cue in cueList3D)
-            {
-                cue.Cue.Pause();
-            }
+            foreach (Cue3D cue in playingCues3D) cue.Cue.Pause();
         }
 
+        //Resume All Playing Sounds
         public void ResumeAll()
         {
-            foreach (Cue3D cue in cueList3D)
-            {
-                cue.Cue.Resume();
-            }
+            foreach (Cue3D cue in playingCues3D) cue.Cue.Resume();
+        }
+
+        protected override void HandleInput(GameTime gameTime)
+        {
         }
 
         public override void Update(GameTime gameTime)
         {
             this.audioEngine.Update();
-
-            for (int i = 0; i < cueList2D.Count; i++)
+            for (int i = 0; i < playingCues3D.Count; i++)
             {
-                Cue cue = cueList2D[i];
-                if (cue.IsStopped)
+                if (this.playingCues3D[i].Cue.IsPlaying)
+                    this.playingCues3D[i].Cue.Apply3D(audioListener, this.playingCues3D[i].Emitter);
+
+                else if (this.playingCues3D[i].Cue.IsStopped)
                 {
-                    this.cueList2D.Remove(cue);
-                    this.cueNameList2D.Remove(cue.Name);
+                    this.playSet3D.Remove(this.playingCues3D[i].Cue.Name);
+                    this.playingCues3D.RemoveAt(i--);
                 }
             }
 
-
-
-            for (int i = 0; i < cueList3D.Count; i++)
+            for (int i = 0; i < playingCues2D.Count; i++)
             {
-                if (this.cueList3D[i].Cue.IsPlaying)
-                    this.cueList3D[i].Cue.Apply3D(audioListener, this.cueList3D[i].Emitter);
-                else if (this.cueList3D[i].Cue.IsStopped)
+                if (this.playingCues2D[i].IsStopped)
                 {
-                    this.playSet3D.Remove(this.cueList3D[i].Cue.Name);
-                    this.cueList3D.RemoveAt(i--);
+                    this.playSet2D.Remove(this.playingCues2D[i].Name);
+                    this.playingCues2D.RemoveAt(i--);
                 }
             }
+
             base.Update(gameTime);
         }
 
@@ -383,5 +456,6 @@ namespace GDLibrary
             this.waveBank.Dispose();
             base.Dispose(disposing);
         }
+        #endregion
     }
 }

@@ -35,6 +35,9 @@ namespace GDLibrary
         OrbitalCamera,
         Player,
         DistanceColorController,
+        SineScaleLerp,
+        Spin,
+        Scale,
 
         //Add more here...
     }

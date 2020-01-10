@@ -7,7 +7,6 @@ Bugs:			None
 Fixes:			None
 */
 
-using System;
 using Microsoft.Xna.Framework;
 
 namespace GDLibrary
@@ -32,9 +31,11 @@ namespace GDLibrary
         }
         #endregion
 
-        public UIScaleSineLerpController(string id, ControllerType controllerType, TrigonometricParameters trigonometricParameters) 
-            : base(id, controllerType)
-        {
+        public UIScaleSineLerpController(
+            string id,
+            ControllerType controllerType,
+            TrigonometricParameters trigonometricParameters
+        ) : base(id, controllerType) {
             this.TrigonometricParameters = trigonometricParameters;
         }
 
@@ -46,17 +47,16 @@ namespace GDLibrary
 
         protected override void ApplyController(GameTime gameTime, UIObject uiObject, float totalElapsedTime)
         {
-            //sine wave in the range 0 -> max amplitude
-            float lerpFactor = MathUtility.Sin(this.TrigonometricParameters, totalElapsedTime);
-            //apply scale change
+            //Sine wave in the range 0 -> max amplitude
+            float lerpFactor = MathUtility.SineLerpByElapsedTime(this.TrigonometricParameters, totalElapsedTime);
+
+            //Apply scale change
             uiObject.Transform.Scale = uiObject.Transform.OriginalTransform2D.Scale + Vector2.One * lerpFactor;
         }
 
         public override bool Equals(object obj)
         {
-            UIScaleSineLerpController other = obj as UIScaleSineLerpController;
-
-            if (other == null)
+            if (!(obj is UIScaleSineLerpController other))
                 return false;
             else if (this == other)
                 return true;
@@ -75,10 +75,11 @@ namespace GDLibrary
 
         public override object Clone()
         {
-            return new UIScaleSineLerpController("clone - " + this.ID, //deep
-                this.ControllerType, //deep
-                (TrigonometricParameters) this.trigonometricParameters.Clone() //deep
-                );
+            return new UIScaleSineLerpController(
+                "Clone - " + this.ID,
+                this.ControllerType,
+                (TrigonometricParameters)this.trigonometricParameters.Clone()
+            );
         }
     }
 }

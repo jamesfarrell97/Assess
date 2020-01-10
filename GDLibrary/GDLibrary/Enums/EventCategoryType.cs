@@ -36,5 +36,8 @@ namespace GDLibrary
         Debug,
         Video,
         TextRender,
+        Game,
+        Level,
+        Textbox,
     }
 }

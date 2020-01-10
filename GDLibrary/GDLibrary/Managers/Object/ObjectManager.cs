@@ -104,29 +104,26 @@ namespace GDLibrary
         {
             if (eventData.EventType == EventActionType.OnAddActor)
             {
-                DrawnActor3D actor = eventData.Sender as DrawnActor3D;
-                if (actor != null)
+                if (eventData.Sender is DrawnActor3D actor)
                     this.Add(actor);
             }
         }
 
         private void EventDispatcher_RemoveActorChanged(EventData eventData)
         {
-
             if (eventData.EventType == EventActionType.OnRemoveActor)
             {
-                DrawnActor3D actor = eventData.Sender as DrawnActor3D;
-                if (actor != null)
-                    this.Remove(actor);
+                if (eventData.Sender is DrawnActor3D sender)
+                {
+                    this.Remove(sender);
+                }
             }
         }
 
         private void EventDispatcher_OpacityChanged(EventData eventData)
         {
-            DrawnActor3D actor = eventData.Sender as DrawnActor3D;
-
-            if (actor != null)
-            { 
+            if (eventData.Sender is DrawnActor3D actor)
+            {
                 if (eventData.EventType == EventActionType.OnOpaqueToTransparent)
                 {
                     //remove from opaque and add to transparent
@@ -148,19 +145,22 @@ namespace GDLibrary
         {
             //Set the graphics card to repeat the end pixel value for any UV value outside 0-1
             //See http://what-when-how.com/xna-game-studio-4-0-programmingdeveloping-for-windows-phone-7-and-xbox-360/samplerstates-xna-game-studio-4-0-programming/
-            SamplerState samplerState = new SamplerState();
-            samplerState.AddressU = TextureAddressMode.Mirror;
-            samplerState.AddressV = TextureAddressMode.Mirror;
+            SamplerState samplerState = new SamplerState {
+                AddressU = TextureAddressMode.Mirror,
+                AddressV = TextureAddressMode.Mirror
+            };
+
             Game.GraphicsDevice.SamplerStates[0] = samplerState;
 
             //Opaque objects
-            this.rasterizerStateOpaque = new RasterizerState();
-            this.rasterizerStateOpaque.CullMode = CullMode.CullCounterClockwiseFace;
+            this.rasterizerStateOpaque = new RasterizerState {
+                CullMode = CullMode.CullCounterClockwiseFace
+            };
 
             //Transparent objects
-            this.rasterizerStateTransparent = new RasterizerState();
-            this.rasterizerStateTransparent.CullMode = CullMode.None;
-
+            this.rasterizerStateTransparent = new RasterizerState {
+                CullMode = CullMode.None
+            };
         }
 
         private void SetGraphicsStateObjects(bool isOpaque)
@@ -204,8 +204,8 @@ namespace GDLibrary
                 Add(actor);
         }
 
-            //call when we want to remove a drawn object from the scene
-            public void Remove(Actor3D actor)
+        //Call when we want to remove a drawn object from the scene
+        public void Remove(Actor3D actor)
         {
             this.removeList.Add(actor);
         }
@@ -214,12 +214,12 @@ namespace GDLibrary
         {
             Actor3D actor = null;
 
-            //look in opaque
+            //Look in opaque
             actor = this.opaqueDrawList.Find(predicate);
             if (actor != null)
                 return actor;
 
-            //look in transparent
+            //Look in transparent
             actor = this.transparentDrawList.Find(predicate);
             if (actor != null)
                 return actor;
@@ -232,35 +232,34 @@ namespace GDLibrary
         {
             List<Actor3D> resultList = new List<Actor3D>();
 
-            //look in opaque
+            //Look in opaque
             resultList.AddRange(this.opaqueDrawList.FindAll(predicate));
-            //look in transparent
+            
+            //Look in transparent
             resultList.AddRange(this.transparentDrawList.FindAll(predicate));
 
             return resultList.Count == 0 ? null : resultList;
-
         }
 
         public int Remove(Predicate<Actor3D> predicate)
         {
-            List<Actor3D> resultList = null;
-
-            resultList = this.opaqueDrawList.FindAll(predicate);
-            if ((resultList != null) && (resultList.Count != 0)) //the actor(s) were found in the opaque list
-            {
+            List<Actor3D> resultList = this.opaqueDrawList.FindAll(predicate);
+            
+            //The actor(s) were found in the opaque list
+            if ((resultList != null) && (resultList.Count != 0)) {
                 foreach (Actor3D actor in resultList)
                     this.removeList.Add(actor);
             }
-            else //the actor(s) were found in the transparent list
-            {
-                resultList = this.transparentDrawList.FindAll(predicate);
 
+            //The actor(s) were found in the transparent list
+            else {
+                resultList = this.transparentDrawList.FindAll(predicate);
                 if ((resultList != null) && (resultList.Count != 0))
                     foreach (Actor3D actor in resultList)
                         this.removeList.Add(actor);
             }
 
-            //returns how many objects will be removed in the next update() call
+            //Returns how many objects will be removed in the next update() call
             return removeList != null ? removeList.Count : 0;
         }
 
@@ -386,15 +385,22 @@ namespace GDLibrary
             effect.World = primitiveObject.GetWorldMatrix();
             effect.View = this.cameraManager.ActiveCamera.View;
             effect.Projection = this.cameraManager.ActiveCamera.ProjectionParameters.Projection;
+            
+            if (primitiveObject.BoundingSphere.Intersects(this.cameraManager.ActiveCamera.BoundingFrustum))  {
 
-            if (primitiveObject.EffectParameters.Texture != null)
-                effect.Texture = primitiveObject.EffectParameters.Texture;
+                if (primitiveObject.EffectParameters.Texture != null)
+                    effect.Texture = primitiveObject.EffectParameters.Texture;
 
-            effect.DiffuseColor = primitiveObject.EffectParameters.DiffuseColor.ToVector3();
-            effect.Alpha = primitiveObject.Alpha;
+                effect.DiffuseColor = primitiveObject.EffectParameters.DiffuseColor.ToVector3();
+                effect.Alpha = primitiveObject.Alpha;
 
-            effect.CurrentTechnique.Passes[0].Apply();
-            primitiveObject.VertexData.Draw(gameTime, effect);
+                effect.CurrentTechnique.Passes[0].Apply();
+                primitiveObject.VertexData.Draw(gameTime, effect);
+            }
+            else
+            {
+                //Object is out of frame - don't draw it
+            }
         }
 
         private void DrawObject(GameTime gameTime, BillboardPrimitiveObject billboardPrimitiveObject)

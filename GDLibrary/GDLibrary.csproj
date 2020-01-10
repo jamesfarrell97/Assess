@@ -108,6 +108,8 @@
     <Compile Include="GDLibrary\Controllers\3D\Object\DistanceColorController.cs" />
     <Compile Include="GDLibrary\Controllers\3D\Object\PickupController.cs" />
     <Compile Include="GDLibrary\Controllers\3D\Object\RotationController.cs" />
+    <Compile Include="GDLibrary\Controllers\3D\Object\ScaleController.cs" />
+    <Compile Include="GDLibrary\Controllers\3D\Object\SpinController.cs" />
     <Compile Include="GDLibrary\Controllers\3D\Object\TranslationSineLerpController.cs" />
     <Compile Include="GDLibrary\Controllers\3D\PlayerController.cs" />
     <Compile Include="GDLibrary\Controllers\3D\Video\Video3DController.cs" />
@@ -125,6 +127,7 @@
     <Compile Include="GDLibrary\Enums\BillboardType.cs" />
     <Compile Include="GDLibrary\Enums\CameraLayoutType.cs" />
     <Compile Include="GDLibrary\Enums\ControllerType.cs" />
+    <Compile Include="GDLibrary\Enums\DirectionAxis.cs" />
     <Compile Include="GDLibrary\Enums\EventActionType.cs" />
     <Compile Include="GDLibrary\Enums\EventCategoryType.cs" />
     <Compile Include="GDLibrary\Enums\OrientationType.cs" />
@@ -139,11 +142,13 @@
     <Compile Include="GDLibrary\Interfaces\IController.cs" />
     <Compile Include="GDLibrary\Interfaces\IEffectParameters.cs" />
     <Compile Include="GDLibrary\Interfaces\IVertexData.cs" />
+    <Compile Include="GDLibrary\Managers\Game\GameManager.cs" />
     <Compile Include="GDLibrary\Managers\State\StateManager.cs" />
     <Compile Include="GDLibrary\Managers\Input\GamepadManager.cs" />
     <Compile Include="GDLibrary\Managers\Menu\MenuManager.cs" />
     <Compile Include="GDLibrary\Managers\Picking\PickingManager.cs" />
     <Compile Include="GDLibrary\Managers\Sound\SoundManager.cs" />
+    <Compile Include="GDLibrary\Managers\UI\TextboxManager.cs" />
     <Compile Include="GDLibrary\Managers\UI\UIManager.cs" />
     <Compile Include="GDLibrary\Parameters\2D\Transform2D.cs" />
     <Compile Include="GDLibrary\Parameters\Camera\ProjectionParameters.cs" />
@@ -158,6 +163,7 @@
     <Compile Include="GDLibrary\Parameters\Primitives\BillboardVertexData.cs" />
     <Compile Include="GDLibrary\Parameters\Primitives\BufferedIndexedVertexData.cs" />
     <Compile Include="GDLibrary\Parameters\Primitives\BufferedVertexData.cs" />
+    <Compile Include="GDLibrary\Parameters\Primitives\DynamicBufferedIndexedVertexData.cs" />
     <Compile Include="GDLibrary\Parameters\Primitives\DynamicBufferedVertexData.cs" />
     <Compile Include="GDLibrary\Parameters\Primitives\VertexData.cs" />
     <Compile Include="GDLibrary\Templates\PausableDrawableGameComponent.cs" />
@@ -184,6 +190,7 @@
     <Compile Include="GDLibrary\Utility\Integer3.cs" />
     <Compile Include="GDLibrary\Utility\LevelLoader.cs" />
     <Compile Include="GDLibrary\Utility\MathUtility.cs" />
+    <Compile Include="GDLibrary\Utility\MatrixUtility.cs" />
     <Compile Include="GDLibrary\Utility\ScreenUtility.cs" />
     <Compile Include="GDLibrary\Utility\StatefulBool.cs" />
     <Compile Include="GDLibrary\Utility\StringUtility.cs" />

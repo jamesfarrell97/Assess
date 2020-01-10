@@ -45,49 +45,52 @@ namespace GDLibrary
                 this.curveEvaluationPrecision = value;
             }
         }
+
+        public float ElapsedTimeInMs { get => elapsedTimeInMs; set => elapsedTimeInMs = value; }
         #endregion
 
         //pre-curveEvaluationPrecision compatability constructor
-        public Track3DController(string id, ControllerType controllerType,
-            Track3D transform3DCurve, PlayStatusType playStatusType)
-            : this(id, controllerType, transform3DCurve, playStatusType, DefaultCurveEvaluationPrecision)
-        {
+        public Track3DController(
+            string id, 
+            ControllerType controllerType,
+            Track3D transform3DCurve, 
+            PlayStatusType playStatusType
+        ) : this(id, controllerType, transform3DCurve, playStatusType, DefaultCurveEvaluationPrecision) {
+            StateManager.FinishedTracking = false;
         }
 
-        public Track3DController(string id, ControllerType controllerType,
-            Track3D transform3DCurve, PlayStatusType playStatusType,
-            int curveEvaluationPrecision)
-            : base(id, controllerType)
-        {
+        public Track3DController(
+            string id, 
+            ControllerType controllerType,
+            Track3D transform3DCurve, 
+            PlayStatusType playStatusType,
+            int curveEvaluationPrecision
+        ) : base(id, controllerType) {
             this.transform3DCurve = transform3DCurve;
             this.playStatusType = playStatusType;
-            this.elapsedTimeInMs = 0;
+            this.ElapsedTimeInMs = 0;
             this.curveEvaluationPrecision = curveEvaluationPrecision;
         }
 
         public override void Update(GameTime gameTime, IActor actor)
         {
-            Actor3D parentActor = actor as Actor3D;
-            if (parentActor != null)
+            if (actor is Actor3D parentActor)
             {
                 if (this.playStatusType == PlayStatusType.Play)
                     UpdateTrack(gameTime, parentActor);
                 else if ((this.playStatusType == PlayStatusType.Reset) || (this.playStatusType == PlayStatusType.Stop))
-                    this.elapsedTimeInMs = 0;
+                    this.ElapsedTimeInMs = 0;
             }
         }
 
         Vector3 translation, look, up;
         private void UpdateTrack(GameTime gameTime, Actor3D parentActor)
         {
-            this.elapsedTimeInMs += gameTime.ElapsedGameTime.Milliseconds;
-            this.transform3DCurve.Evalulate(elapsedTimeInMs, this.curveEvaluationPrecision, out translation, out look, out up);
+            this.ElapsedTimeInMs += gameTime.ElapsedGameTime.Milliseconds;
+            this.transform3DCurve.Evalulate(ElapsedTimeInMs, this.curveEvaluationPrecision, out translation, out look, out up);
             parentActor.Transform.Translation = translation;
             parentActor.Transform.Look = look;
             parentActor.Transform.Up = up;
         }
-
-        //add clone...
     }
 }
-

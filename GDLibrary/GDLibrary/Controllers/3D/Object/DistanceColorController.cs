@@ -95,7 +95,7 @@ namespace GDLibrary
             Actor3D parentActor = actor as Actor3D;
             CalculateColorBasedOnDistance(parentActor);
 
-            if (StateManager.IsMoving) this.ColorUpdated = false;
+            if (StateManager.IsCharacterMoving) this.ColorUpdated = false;
 
             base.Update(gameTime, actor);
         }

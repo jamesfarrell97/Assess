@@ -63,14 +63,14 @@ namespace GDLibrary
         {
             if (collisionPrimitive is SphereCollisionPrimitive)
             {
-                int primitiveCount = 0;
-                PrimitiveType primitiveType;
-                vertexData = new VertexData<VertexPositionColor>(
-                                VertexFactory.GetSphereVertices(1, 10, out primitiveType, out primitiveCount),
-                                primitiveType, primitiveCount);
-
                 coll = collisionPrimitive as SphereCollisionPrimitive;
                 world = Matrix.Identity * Matrix.CreateScale(coll.BoundingSphere.Radius) * Matrix.CreateTranslation(coll.BoundingSphere.Center);
+
+                vertexData = new VertexData<VertexPositionColor>(
+                    VertexFactory.GetSphereVertices(1, 10, out PrimitiveType primitiveType, out int primitiveCount),
+                    primitiveType, primitiveCount
+                );
+
                 this.wireframeEffect.World = world;
                 this.wireframeEffect.View = this.cameraManager.ActiveCamera.View;
                 this.wireframeEffect.Projection = this.cameraManager.ActiveCamera.ProjectionParameters.Projection;

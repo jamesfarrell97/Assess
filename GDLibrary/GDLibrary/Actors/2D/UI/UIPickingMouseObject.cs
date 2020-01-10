@@ -43,7 +43,7 @@ namespace GDApp
             Rectangle sourceRectangle, 
             Vector2 origin, 
             MouseManager mouseManager, 
-             EventDispatcher eventDispatcher
+            EventDispatcher eventDispatcher
         ) : base(id, actorType, statusType, transform, color, spriteEffects, spriteFont, text, textOffsetPosition, textColor, layerDepth, texture, sourceRectangle, origin, mouseManager) {
             this.eventDispatcher = eventDispatcher;
 
@@ -62,13 +62,13 @@ namespace GDApp
             if (eventData.EventType == EventActionType.OnObjectPicked)
             {
                 //see PickingManager::UpdateEventListeners() for publish point
-                this.Text = CollisionUtility.GetMouseStringFromCollidableObject(eventData.AdditionalParameters[0] as Actor, (float)eventData.AdditionalParameters[1]);
+                //this.Text = CollisionUtility.GetMouseStringFromCollidableObject(eventData.AdditionalParameters[0] as Actor, (float)eventData.AdditionalParameters[1]);
                 SetAppearance();
             }
             else if (eventData.EventType == EventActionType.OnNonePicked)
             {
                 //see PickingManager::UpdateEventListeners() for publish point
-                this.Text = eventData.AdditionalParameters[0] as string;
+                //this.Text = eventData.AdditionalParameters[0] as string;
                 ResetAppearance();
             }
         }
@@ -77,11 +77,11 @@ namespace GDApp
         protected virtual void SetAppearance()
         {
             //set reticule color and text color
-            this.TextColor = this.Color = Color.Yellow;
-
-            //we could change texture by setting the SourceRectangle (assuming texture contains "numberOfReticuleIconsPerTexture" images)
-            this.SourceRectangle = new Rectangle((numberOfReticuleIconsPerTexture - 1) * this.Texture.Width / numberOfReticuleIconsPerTexture, 0, 
-                this.Texture.Width / numberOfReticuleIconsPerTexture, this.Texture.Height / numberOfReticuleIconsPerTexture);
+            this.TextColor = this.Color = Color.MediumOrchid;
+            
+            ////we could change texture by setting the SourceRectangle (assuming texture contains "numberOfReticuleIconsPerTexture" images)
+            //this.SourceRectangle = new Rectangle((numberOfReticuleIconsPerTexture - 1) * this.Texture.Width / numberOfReticuleIconsPerTexture, 0, 
+            //    this.Texture.Width / numberOfReticuleIconsPerTexture, this.Texture.Height / numberOfReticuleIconsPerTexture);
         }
 
 
@@ -90,9 +90,9 @@ namespace GDApp
             //reset reticule color and text color
             this.TextColor = this.Color = this.OriginalColor;
 
-            //reset back to the first reticule icon in the texture
-            this.SourceRectangle = new Rectangle(0, 0,
-                this.Texture.Width / numberOfReticuleIconsPerTexture, this.Texture.Height / numberOfReticuleIconsPerTexture);
+            ////reset back to the first reticule icon in the texture
+            //this.SourceRectangle = new Rectangle(0, 0,
+            //    this.Texture.Width / numberOfReticuleIconsPerTexture, this.Texture.Height / numberOfReticuleIconsPerTexture);
         }
 
     }

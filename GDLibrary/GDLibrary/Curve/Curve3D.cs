@@ -4,20 +4,15 @@ namespace GDLibrary
 {
     public class Curve3D
     {
-        private Curve1D xCurve, yCurve, zCurve;
-        private CurveLoopType curveLookType;
+        private readonly Curve1D xCurve;
+        private readonly Curve1D yCurve;
+        private readonly Curve1D zCurve;
 
-        public CurveLoopType CurveLookType
-        {
-            get
-            {
-                return curveLookType;
-            }
+        public CurveLoopType CurveLookType { get; }
 
-        }
         public Curve3D(CurveLoopType curveLoopType)
         {
-            this.curveLookType = curveLoopType;
+            this.CurveLookType = curveLoopType;
 
             this.xCurve = new Curve1D(curveLoopType);
             this.yCurve = new Curve1D(curveLoopType);

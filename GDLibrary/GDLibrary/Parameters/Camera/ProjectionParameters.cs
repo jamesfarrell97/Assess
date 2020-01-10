@@ -228,25 +228,26 @@ namespace GDLibrary
             {
                 if (this.IsDirty)
                 {
-                    if (StateManager.IsPerspective)
-                    {
-                        this.projection = Matrix.CreatePerspectiveFieldOfView(
-                             this.FieldOfView,
-                             this.AspectRatio,
-                             this.NearClipPlane,
-                             this.FarClipPlane
-                        );
-                    }
+                    //if (StateManager.IsOrthographic)
+                    //{
+                    //  this.projection = Matrix.CreateOrthographic(
+                    //      this.Width,
+                    //      this.Height,
+                    //      this.NearClipPlane,
+                    //      this.FarClipPlane
+                    //  );
+                    //}
 
-                    else
-                    {
-                        this.projection = Matrix.CreateOrthographic(
-                            this.Width,
-                            this.Height,
-                            this.NearClipPlane,
-                            this.FarClipPlane
-                        );
-                    }
+                    //else
+                    //{
+                    //}
+
+                    this.projection = Matrix.CreatePerspectiveFieldOfView(
+                        this.FieldOfView,
+                        this.AspectRatio,
+                        this.NearClipPlane,
+                        this.FarClipPlane
+                    );
 
                     this.IsDirty = false;
                 }

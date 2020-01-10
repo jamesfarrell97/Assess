@@ -32,10 +32,10 @@ namespace GDLibrary
         public Curve1D(CurveLoopType curveLookType)
         {
             this.curveLookType = curveLookType;
-
-            this.curve = new Curve();
-            this.curve.PreLoop = curveLookType;
-            this.curve.PostLoop = curveLookType;
+            this.curve = new Curve {
+                PreLoop = curveLookType,
+                PostLoop = curveLookType
+            };
         }
 
         public void Add(float value, float timeInSecs)

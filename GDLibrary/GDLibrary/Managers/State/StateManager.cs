@@ -16,191 +16,45 @@ namespace GDLibrary
     public class StateManager : PausableGameComponent
     {
         #region Fields
-        private static int currentLevel;
-
-        private static bool playerTurn;
-        private static bool enemyTurn;
-        private static bool inCombat;
-        private static bool dodged;
-        private static bool restart;
-        private static bool isKeyBinding;
-
-        private static bool inProximityOfATrigger;
-        private static bool inProximityOfAnItem;
-        private static bool inProximityOfAGate;
-
-        private static bool isRotating;
-        private static bool isMoving;
-
-        private static bool isPerspective;
+        private static int currentGoal;
         #endregion
 
         #region Properties
-        public static int CurrentLevel
-        {
-            get
-            {
-                return currentLevel;
-            }
-            set
-            {
-                currentLevel = value;
-            }
-        }
+        public static int CurrentLevel { get; set; }
+        public static int GoalsRemaining { get; set; }
 
-        public static bool PlayerTurn
-        {
-            get
-            {
-                return playerTurn;
-            }
-            set
-            {
-                playerTurn = value;
-            }
-        }
+        public static int CurrentGoalInLoop { get => currentGoal; set => currentGoal = (value % 4); }
+        public static int CurrentTextInLoop { get; set; }
 
-        public static bool EnemyTurn
-        {
-            get
-            {
-                return enemyTurn;
-            }
-            set
-            {
-                enemyTurn = value;
-            }
-        }
-
-        public static bool InCombat
-        {
-            get
-            {
-                return inCombat;
-            }
-            set
-            {
-                inCombat = value;
-            }
-        }
-
-        public static bool Dodged
-        {
-            get
-            {
-                return dodged;
-            }
-            set
-            {
-                dodged = value;
-            }
-        }
-
-        public static bool Restart
-        {
-            get
-            {
-                return restart;
-            }
-            set
-            {
-                restart = value;
-            }
-        }
-
-        public static bool IsKeyBinding
-        {
-            get
-            {
-                return isKeyBinding;
-            }
-            set
-            {
-                isKeyBinding = value;
-            }
-        }
-
-        public static bool InProximityOfATrigger
-        {
-            get
-            {
-                return inProximityOfATrigger;
-            }
-            set
-            {
-                inProximityOfATrigger = value;
-            }
-        }
-
-        public static bool InProximityOfAnItem
-        {
-            get
-            {
-                return inProximityOfAnItem;
-            }
-            set
-            {
-                inProximityOfAnItem = value;
-            }
-        }
-
-        public static bool InProximityOfAGate
-        {
-            get
-            {
-                return inProximityOfAGate;
-            }
-            set
-            {
-                inProximityOfAGate = value;
-            }
-        }
-
-        public static bool IsPerspective
-        {
-            get
-            {
-                return isPerspective;
-            }
-            set
-            {
-                isPerspective = value;
-            }
-        }
-
-        public static bool ScreamPlayed { get; set; }
-        public static bool RatsPlayed { get; set; }
-        public static bool ChainsPlayed { get; set; }
-        public static bool GameWon { get; set; }
-
-        public static bool IsRotating { get => isRotating; set => isRotating = value; }
-        public static bool IsMoving { get => isMoving; set => isMoving = value; }
-        public static bool BlockMoved { get; internal set; }
+        public static bool IsFalling { get; set; }
+        public static bool IsCameraMoving { get; set; }
+        public static bool IsCharacterMoving { get; set; }
+        public static bool InProximityOfATrigger { get; set; }
+        public static bool InProximityOfAnItem { get; set; }
+        public static bool InProximityOfAGate { get; set; }
+        public static bool ContinueClicked { get; set; }
+        public static bool ResumeClicked { get; set; }
+        public static bool RestartClicked { get; set; }
+        public static bool PlayerDied { get; set; }
+        public static bool LevelClear { get; set; }
+        public static bool FinishedTracking { get; set; }
+        public static bool IncompletePlayed { get; internal set; }
         #endregion
 
         #region Constructor
         public StateManager(
-            Game game, 
-            EventDispatcher eventDispatcher, 
+            Game game,
+            EventDispatcher eventDispatcher,
             StatusType statusType
         ) : base(game, eventDispatcher, statusType) {
-            PlayerTurn = true;
-            EnemyTurn = false;
-            IsKeyBinding = false;
-            InProximityOfATrigger = false;
-            InProximityOfAnItem = false;
-            InProximityOfAGate = false;
-            InCombat = false;
-            IsRotating = false;
-            IsMoving = false;
-            IsPerspective = true;
+            DefaultState();
         }
         #endregion
 
         #region Event Handling
         protected override void RegisterForEventHandling(EventDispatcher eventDispatcher)
         {
-            //eventDispatcher.GameChanged += EventDispatcher_GameChanged;
+            eventDispatcher.LevelChanged += EventDispatcher_LevelChanged;
         }
 
         protected override void EventDispatcher_MenuChanged(EventData eventData)
@@ -220,13 +74,34 @@ namespace GDLibrary
             }
         }
 
-        private void EventDispatcher_GameChanged(EventData eventData)
+        private void EventDispatcher_LevelChanged(EventData eventData)
         {
             //Did the event come from the game being won?
-            if (eventData.EventType == EventActionType.OnWin)
+            if (eventData.EventType == EventActionType.OnClear)
             {
                 CurrentLevel++;
             }
+
+            if (eventData.EventType == EventActionType.OnReset)
+            {
+                //Do nothing
+            }
+        }
+        #endregion
+
+        #region Methods
+        public static void DefaultState()
+        {
+            IsFalling = false;
+            IsCameraMoving = false;
+            IsCharacterMoving = false;
+            InProximityOfATrigger = false;
+            InProximityOfAnItem = false;
+            InProximityOfAGate = false;
+            ContinueClicked = false;
+            RestartClicked = false;
+            PlayerDied = false;
+            LevelClear = false;
         }
         #endregion
     }

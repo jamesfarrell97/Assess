@@ -9,7 +9,8 @@ namespace GDLibrary
         private string text;
         private SpriteFont spriteFont;
         private Color textColor;
-        private Vector2 textOrigin, textOffset;
+        private Vector2 textOrigin;
+        private Vector2 textOffset;
         #endregion
 
         #region Properties
@@ -25,6 +26,7 @@ namespace GDLibrary
                 this.textOrigin = this.spriteFont.MeasureString(text) / 2.0f;
             }
         }
+
         public SpriteFont SpriteFont
         {
             get
@@ -36,6 +38,7 @@ namespace GDLibrary
                 this.spriteFont = value;
             }
         }
+
         public Color TextColor
         {
             get
@@ -49,50 +52,62 @@ namespace GDLibrary
         }
         #endregion
 
-        public UIButtonObject(string id, ActorType actorType, StatusType statusType, Transform2D transform,
-            Color color, SpriteEffects spriteEffects, float layerDepth, Texture2D texture,
-            string text, SpriteFont spriteFont, Color textColor, Vector2 textOffset)
-            : base(id, actorType, statusType, transform, color, spriteEffects, layerDepth, texture)
-            {
-                this.spriteFont = spriteFont;
-          
-                //set using the property to also set the text origin
-                this.Text = text;
-                this.textColor = textColor;
-                this.textOffset = textOffset;
-        }
+        #region Constructors
+        public UIButtonObject(
+            string id,
+            ActorType actorType,
+            StatusType statusType,
+            Transform2D transform,
+            Color color,
+            SpriteEffects spriteEffects,
+            float layerDepth,
+            Texture2D texture,
+            string text,
+            SpriteFont spriteFont,
+            Color textColor,
+            Vector2 textOffset
+        ) : base(id, actorType, statusType, transform, color, spriteEffects, layerDepth, texture)
+        {
+            this.spriteFont = spriteFont;
 
+            //Set using the property to also set the text origin
+            this.Text = text;
+            this.textColor = textColor;
+            this.textOffset = textOffset;
+        }
+        #endregion
+
+        #region Methods
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
-            //draw the texture first
+            //Draw the texture first
             base.Draw(gameTime, spriteBatch);
 
-            //draw the overlay text
-            spriteBatch.DrawString(this.spriteFont, 
-                                        this.text, 
-                                        this.Transform.Translation + this.textOffset,
-                                        this.textColor,
-                                        0,
-                                        this.textOrigin, 
-                                        this.Transform.Scale, 
-                                        SpriteEffects.None, 
-                                        0.9f * this.LayerDepth); //reduce the layer depth slightly so text is always in front of the texture (remember that 0 = front, 1 = back)
-
+            //Draw the overlay text
+            spriteBatch.DrawString(
+                this.spriteFont,
+                this.text,
+                this.Transform.Translation + this.textOffset,
+                this.textColor,
+                0,
+                this.textOrigin,
+                this.Transform.Scale,
+                SpriteEffects.None,
+                0.9f * this.LayerDepth //Reduce the layer depth slightly so text is always in front of the texture (remember that 0 = front, 1 = back)
+            );
         }
 
         public override bool Equals(object obj)
         {
-            UIButtonObject other = obj as UIButtonObject;
-
-            if (other == null)
+            if (!(obj is UIButtonObject other))
                 return false;
             else if (this == other)
                 return true;
 
             return this.text.Equals(other.Text)
                 && this.spriteFont.Equals(other.SpriteFont)
-                    && this.textColor.Equals(other.TextColor)
-                        && base.Equals(obj);
+                && this.textColor.Equals(other.TextColor)
+                && base.Equals(obj);
         }
 
         public override int GetHashCode()
@@ -107,25 +122,26 @@ namespace GDLibrary
 
         public new object Clone()
         {
-            IActor actor = new UIButtonObject("clone - " + ID, //deep
-                this.ActorType, //deep
-                this.StatusType, //deep - enum type
-                (Transform2D)this.Transform.Clone(), //deep - calls the clone for Transform3D explicitly
-                this.Color, //deep 
-                this.SpriteEffects, //deep - enum type
-                this.LayerDepth, //deep
-                this.Texture, //shallow
-                this.text, //deep
-                this.spriteFont, //shallow
-                this.textColor, //deep
-                this.textOffset); //deep
+            IActor actor = new UIButtonObject(
+                "Clone - " + ID,                        //Deep
+                this.ActorType,                         //Deep
+                this.StatusType,                        //Deep - enum type
+                (Transform2D)this.Transform.Clone(),    //Deep - calls the clone for Transform3D explicitly
+                this.Color,                             //Deep 
+                this.SpriteEffects,                     //Deep - enum type
+                this.LayerDepth,                        //Deep
+                this.Texture,                           //Shallow
+                this.text,                              //Deep
+                this.spriteFont,                        //Dhallow
+                this.textColor,                         //Deep
+                this.textOffset                         //Deep
+            );
 
-            //clone each of the (behavioural) controllers, if we have any controllers attached
+            //Clone each of the (behavioural) controllers, if we have any controllers attached
             if (this.ControllerList != null)
-            {
                 foreach (IController controller in this.ControllerList)
                     actor.AttachController((IController)controller.Clone());
-            }
+
             return actor;
         }
 
@@ -134,5 +150,6 @@ namespace GDLibrary
             this.text = null;
             return base.Remove();
         }
+        #endregion
     }
 }

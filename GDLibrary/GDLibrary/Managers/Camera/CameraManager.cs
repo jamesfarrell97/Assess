@@ -32,6 +32,7 @@ namespace GDLibrary
                 return this.cameraList[this.activeCameraIndex];
             }
         }
+
         public int ActiveCameraIndex
         {
             get
@@ -77,7 +78,6 @@ namespace GDLibrary
         }
 
         #endregion
-
         public void Add(Camera3D camera)
         {
             //First time in ensures that we have a default active camera
@@ -100,6 +100,11 @@ namespace GDLibrary
         public int RemoveAll(Predicate<Camera3D> predicate)
         {
             return this.cameraList.RemoveAll(predicate);
+        }
+
+        public void Clear()
+        {
+            this.cameraList.Clear();
         }
 
         public bool SetActiveCamera(Predicate<Camera3D> predicate)

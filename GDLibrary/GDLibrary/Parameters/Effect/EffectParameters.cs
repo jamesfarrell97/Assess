@@ -29,9 +29,11 @@ namespace GDLibrary
         //setting these values prevents us from seeing only a black surface (i.e. no texture, no color) or no object at all (alpha = 0).
         private Color diffuseColor = Color.White;
         private Color originalColor = Color.White;
-        private float alpha = DefaultAlpha;
 
-        //reset
+        private float alpha = DefaultAlpha;
+        private float originalAlpha = DefaultAlpha;
+
+        //Reset
         private EffectParameters originalEffectParameters;
         #endregion
 
@@ -47,6 +49,7 @@ namespace GDLibrary
                 this.effect = value;
             }
         }
+
         public Texture2D Texture
         {
             get
@@ -58,6 +61,7 @@ namespace GDLibrary
                 this.texture = value;
             }
         }
+
         public Color DiffuseColor
         {
             get
@@ -98,6 +102,24 @@ namespace GDLibrary
                     this.alpha = (float)Math.Round(value, DefaultAlphaRoundPrecision);
             }
         }
+
+        public float OriginalAlpha
+        {
+            get
+            {
+                return this.originalAlpha;
+            }
+            set
+            {
+                if (value < 0)
+                    this.originalAlpha = 0;
+                else if (value > 1)
+                    this.originalAlpha = 1;
+                else
+                    this.originalAlpha = (float) Math.Round(value, DefaultAlphaRoundPrecision);
+            }
+        }
+
         public EffectParameters OriginalEffectParameters
         {
             get
@@ -141,6 +163,7 @@ namespace GDLibrary
             this.originalEffectParameters.Initialize(effect, texture, diffuseColor, alpha);
 
             this.OriginalColor = diffusecolor;
+            this.OriginalAlpha = alpha;
         }
 
         protected void Initialize(Effect effect, Texture2D texture, Color diffuseColor, float alpha)

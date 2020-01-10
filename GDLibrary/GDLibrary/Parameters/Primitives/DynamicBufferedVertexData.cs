@@ -38,41 +38,54 @@ namespace GDLibrary
         }
         #endregion
 
-        //allows developer to pass in vertices AND buffer - more efficient since buffer is defined ONCE outside of the object instead of a new VertexBuffer for EACH instance of the class
-        public DynamicBufferedVertexData(GraphicsDevice graphicsDevice, T[] vertices, DynamicVertexBuffer vertexBuffer, PrimitiveType primitiveType, int primitiveCount)
-            : base(graphicsDevice, vertices, vertexBuffer, primitiveType, primitiveCount)
-        {
+        #region Constructors
+        //Allows developer to pass in vertices AND buffer - more efficient since buffer is defined ONCE outside of the object instead of a new VertexBuffer for EACH instance of the class
+        public DynamicBufferedVertexData(
+            GraphicsDevice graphicsDevice, 
+            T[] vertices, 
+            DynamicVertexBuffer vertexBuffer, 
+            PrimitiveType primitiveType, 
+            int primitiveCount
+        ) : base(graphicsDevice, vertices, vertexBuffer, primitiveType, primitiveCount) {
             RegisterForEventHandling();
         }
 
-        //buffer is created INSIDE the class so each class has a buffer - not efficient
-        public DynamicBufferedVertexData(GraphicsDevice graphicsDevice, T[] vertices, PrimitiveType primitiveType, int primitiveCount)
-            : base(graphicsDevice, vertices, primitiveType, primitiveCount)
-        {
+        //Buffer is created INSIDE the class so each class has a buffer - not efficient
+        public DynamicBufferedVertexData(
+            GraphicsDevice graphicsDevice, 
+            T[] vertices, 
+            PrimitiveType primitiveType, 
+            int primitiveCount
+        ) : base(graphicsDevice, vertices, primitiveType, primitiveCount) {
             this.VertexBuffer = new DynamicVertexBuffer(graphicsDevice, typeof(T), vertices.Length, BufferUsage.None);
             RegisterForEventHandling();
         }
+        #endregion
 
+        #region Methods
         private void RegisterForEventHandling()
         {
-            //add an event listener to reset the data if another game object access the graphics device and (potentially) resets buffer contents
-            this.vertexBuffer.ContentLost += vertexBuffer_ContentLost;
+            //Add an event listener to reset the data if another game object access the graphics device and (potentially) resets buffer contents
+            this.VertexBuffer.ContentLost += VertexBuffer_ContentLost;
         }
 
-        //called automatically when developer changes the GFX card loses control to another draw call and the vertex data needs to be reset
-        void vertexBuffer_ContentLost(object sender, EventArgs e)
+        //Called automatically when developer changes the GFX card loses control to another draw call and the vertex data needs to be reset
+        void VertexBuffer_ContentLost(object sender, EventArgs e)
         {
-            //set data on the reserved space
-            this.vertexBuffer.SetData<T>(this.Vertices);
+            //Set data on the reserved space
+            this.VertexBuffer.SetData<T>(this.Vertices);
         }
 
         public new object Clone()
         {
-            return new DynamicBufferedVertexData<T>(this.GraphicsDevice,  //shallow - reference
-                this.Vertices,  //shallow - reference
-                this.VertexBuffer, //shallow - reference
-                this.PrimitiveType,  //struct - deep
-                this.PrimitiveCount);  //deep - primitive
+            return new DynamicBufferedVertexData<T>(
+                this.GraphicsDevice,
+                this.Vertices,
+                this.VertexBuffer,
+                this.PrimitiveType,
+                this.PrimitiveCount
+            );
         }
+        #endregion
     }
 }

@@ -6,16 +6,21 @@ namespace GDLibrary
     {
         #region Fields
         private ICollisionPrimitive collisionPrimitive;
-        private ObjectManager objectManager;
         private Actor collidee;
+
+        private ObjectManager objectManager;
         #endregion
 
         #region Properties
-        protected ObjectManager ObjectManager
+        public ICollisionPrimitive CollisionPrimitive
         {
             get
             {
-                return this.objectManager;
+                return collisionPrimitive;
+            }
+            set
+            {
+                collisionPrimitive = value;
             }
         }
 
@@ -31,19 +36,20 @@ namespace GDLibrary
             }
         }
 
-        public ICollisionPrimitive CollisionPrimitive
+        protected ObjectManager ObjectManager
         {
             get
             {
-                return collisionPrimitive;
+                return this.objectManager;
             }
             set
             {
-                collisionPrimitive = value;
+                this.objectManager = value;
             }
         }
         #endregion
-        
+
+        #region Constructors
         public CollidablePrimitiveObject(
             string id, 
             ActorType actorType, 
@@ -54,10 +60,12 @@ namespace GDLibrary
             ICollisionPrimitive collisionPrimitive, 
             ObjectManager objectManager
         ) : base(id, actorType, transform, effectParameters, statusType, vertexData) {
-            this.collisionPrimitive = collisionPrimitive;
-            this.objectManager = objectManager;
+            this.CollisionPrimitive = collisionPrimitive;
+            this.ObjectManager = objectManager;
         }
+        #endregion
 
+        #region Methods
         public override void Update(GameTime gameTime)
         {
             //Reset collidee to prevent colliding with the same object in the next update
@@ -81,48 +89,6 @@ namespace GDLibrary
         protected virtual void HandleCollisionResponse(Actor collidee)
         {
         }
-
-        //public virtual Actor CheckCollisions(GameTime gameTime)
-        //{
-        //    //test for first collision against opaque and transparent objects
-        //    foreach (IActor actor in objectManager.OpaqueDrawList)
-        //    {
-        //        collidee = CheckCollisionWithActor(gameTime, actor as Actor3D);
-        //        if (collidee != null)
-        //            return collidee;
-        //    }
-
-        //    foreach (IActor actor in objectManager.TransparentDrawList)
-        //    {
-        //        collidee = CheckCollisionWithActor(gameTime, actor as Actor3D);
-        //        if (collidee != null)
-        //            return collidee;
-        //    }
-
-        //    return null;
-        //}
-
-        //private Actor CheckCollisionWithActor(GameTime gameTime, Actor3D actor3D)
-        //{
-        //    //dont test for collision against yourself - remember the player is in the object manager list too!
-        //    if (this != actor3D)
-        //    {
-        //        if (actor3D is CollidablePrimitiveObject)
-        //        {
-        //            CollidablePrimitiveObject collidableObject = actor3D as CollidablePrimitiveObject;
-        //            if (this.CollisionPrimitive.Intersects(collidableObject.CollisionPrimitive, this.Transform.TranslateIncrement))
-        //                return collidableObject;
-        //        }
-        //        else if (actor3D is SimpleZoneObject)
-        //        {
-        //            SimpleZoneObject zoneObject = actor3D as SimpleZoneObject;
-        //            if (this.CollisionPrimitive.Intersects(zoneObject.CollisionPrimitive, this.Transform.TranslateIncrement))
-        //                return zoneObject;
-        //        }
-        //    }
-
-        //    return null;
-        //}
 
         public virtual Actor CheckCollisions(GameTime gameTime)
         {
@@ -187,7 +153,8 @@ namespace GDLibrary
                     this.EffectParameters.Clone() as EffectParameters, 
                     this.StatusType, 
                     this.VertexData,
-                    this.collisionPrimitive.Clone() as BoxCollisionPrimitive, objectManager
+                    this.collisionPrimitive.Clone() as BoxCollisionPrimitive, 
+                    objectManager
                 );
             }
 
@@ -199,9 +166,11 @@ namespace GDLibrary
                     this.EffectParameters.Clone() as EffectParameters,
                     this.StatusType,
                     this.VertexData,
-                    (SphereCollisionPrimitive) this.collisionPrimitive.Clone(), this.objectManager
+                    (SphereCollisionPrimitive) this.collisionPrimitive.Clone(),
+                    this.objectManager
                 );
             }
         }
+        #endregion
     }
 }

@@ -60,5 +60,10 @@ namespace GDLibrary
         OnNonePicked,
         OnAddActor2D,
         OnRemoveActor2D,
+        OnTrackVolumeChange,
+        OnClear,
+        OnActive,
+        OnReset,
+        SetActive,
     }
 }

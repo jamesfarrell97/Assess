@@ -1,133 +1,168 @@
 ﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
 using System;
+using Microsoft.Xna.Framework.Audio;
 
 namespace GDLibrary
 {
     public class PickingManager : PausableGameComponent
     {
-        protected static readonly string NoObjectSelectedText = "no object selected";
-        protected static readonly float DefaultMinPickPlaceDistance = 20;
+        #region Statics
+        protected static readonly string NoObjectSelectedText = "No object selected";
+        protected static readonly float DefaultMinPickPlaceDistance = 10;
         protected static readonly float DefaultMaxPickPlaceDistance = 100;
         private static readonly int DefaultDistanceToTargetPrecision = 1;
-
-        private InputManagerParameters inputManagerParameters;
-        private CameraManager cameraManager;
-        private readonly ObjectManager objectManager;
-        private PickingBehaviourType pickingBehaviourType;
-
-        public PickingManager(Game game, EventDispatcher eventDispatcher, StatusType statusType,
-           InputManagerParameters inputManagerParameters, CameraManager cameraManager,
-           ObjectManager objectManager,
-           PickingBehaviourType pickingBehaviourType)
-           : base(game, eventDispatcher, statusType)
-        {
-            this.inputManagerParameters = inputManagerParameters;
-            this.cameraManager = cameraManager;
-            this.objectManager = objectManager;
-            this.pickingBehaviourType = pickingBehaviourType;
-        }
-
-        #region Event Handling 
         #endregion
 
+        #region Properties
+        public CameraManager CameraManager { get; }
+        public ObjectManager ObjectManager { get; }
+        public InputManagerParameters InputManagerParameters { get; }
+        public PickingBehaviourType PickingBehaviourType { get; }
+        #endregion
+
+        #region Constructors
+        public PickingManager(
+            Game game, 
+            EventDispatcher eventDispatcher, 
+            StatusType statusType,
+            CameraManager cameraManager,
+            ObjectManager objectManager,
+            InputManagerParameters inputManagerParameters, 
+            PickingBehaviourType pickingBehaviourType
+        ) : base(game, eventDispatcher, statusType) {
+            this.CameraManager = cameraManager;
+            this.ObjectManager = objectManager;
+            this.InputManagerParameters = inputManagerParameters;
+            this.PickingBehaviourType = pickingBehaviourType;
+        }
+        #endregion
+
+        #region Methods
         protected override void ApplyUpdate(GameTime gameTime)
         {
-            if (this.cameraManager.ActiveCamera != null)
+            if (this.CameraManager.ActiveCamera != null)
             {
-                Ray mouseRay = this.inputManagerParameters.MouseManager.GetMouseRay(this.cameraManager.ActiveCamera);
-
-                foreach (IActor actor in this.objectManager.OpaqueDrawList)
+                Ray mouseRay = this.InputManagerParameters.MouseManager.GetMouseRay(this.CameraManager.ActiveCamera);
+                if (PickObject(gameTime, this.ObjectManager.OpaqueDrawList, this.ObjectManager.TransparentDrawList, mouseRay))
                 {
-                    if (PickObject(gameTime, actor as Actor3D, mouseRay))
-                        break;
-                }
 
-                foreach (IActor actor in this.objectManager.TransparentDrawList)
-                {
-                    if (PickObject(gameTime, actor as Actor3D, mouseRay))
-                        break;
                 }
             }
 
             base.ApplyUpdate(gameTime);
         }
 
-        private bool PickObject(GameTime gameTime, Actor3D actor3D, Ray mouseRay)
+        private bool PickObject(GameTime gameTime, List<Actor3D> opaqueActors, List<Actor3D> transparantActors, Ray mouseRay)
         {
-            if (actor3D is CollidablePrimitiveObject)
-            {
-                CollidablePrimitiveObject collidee = actor3D as CollidablePrimitiveObject;
+            SortedList collisions = new SortedList();
 
-                //is the mouse ray intersecting with a collidable object?
-                if (collidee.CollisionPrimitive.Intersects(mouseRay))
+            collisions.Clear();
+
+            foreach (IActor actor in opaqueActors.Concat(transparantActors))
+            {
+                if (actor is CollidablePrimitiveObject)
                 {
-                    HandleIntersection(gameTime, collidee);
-                    NotifyIntersection(gameTime, collidee);
-                    return true;
-                }
-                else
-                {
-                    //if we were picking but now we're not then reset mouse
-                    NotifyNoIntersection();
+                    CollidablePrimitiveObject collidee = actor as CollidablePrimitiveObject;
+
+                    //Is the mouse ray intersecting with a collidable object?
+                    if (collidee.CollisionPrimitive.Intersects(mouseRay, out float? distance))
+                    {
+                        //IF the collidee is a breakable block, or an unbreakable, non-transparent block
+                        //This will allow us to remove 'pick' through transparent, unbreakable blocks
+                        if (collidee.GetID().Contains("Breakable") || (collidee.GetID().Contains("Unbreakable") && !collidee.GetID().Contains("Transparent")))
+                        {
+                            if (!collisions.ContainsKey(distance))
+                            {
+                                collisions.Add(distance, collidee);
+                            }
+                        }
+                    }
+
+                    //Reset the alpha and color values of all objects - see HandleIntersection()
+                    collidee.EffectParameters.DiffuseColor = collidee.EffectParameters.OriginalColor;
+
+                    if (!collidee.GetID().Contains("Transparent"))
+                    {
+                        collidee.EffectParameters.Alpha = collidee.EffectParameters.OriginalAlpha;
+                    }
                 }
             }
 
+            //If a collision has taken place
+            if (collisions.Count > 0)
+            {
+                HandleIntersection(gameTime, collisions.GetByIndex(0) as CollidablePrimitiveObject);
+                NotifyIntersection(gameTime, collisions.GetByIndex(0) as CollidablePrimitiveObject);
+                return true;
+            }
+
+            //If we were picking but now we're not then reset mouse
+            NotifyNoIntersection();
             return false;
         }
 
         private void NotifyNoIntersection()
         {
-            //notify listeners that we're no longer picking
             object[] additionalParameters = { NoObjectSelectedText };
-            EventDispatcher.Publish(new EventData(EventActionType.OnNonePicked, EventCategoryType.ObjectPicking, additionalParameters));
+            EventDispatcher.Publish(new EventData(EventActionType.OnNonePicked, EventCategoryType.ObjectPicking, new object[] { NoObjectSelectedText }));
         }
 
         private void NotifyIntersection(GameTime gameTime, CollidablePrimitiveObject collidee)
         {
-            float distanceToObject = (float)Math.Round(Vector3.Distance(this.cameraManager.ActiveCamera.Transform.Translation, collidee.Transform.Translation), DefaultDistanceToTargetPrecision);
-            object[] additionalParameters = { collidee, distanceToObject };
-            EventDispatcher.Publish(new EventData(EventActionType.OnObjectPicked, EventCategoryType.ObjectPicking, additionalParameters));
+            float distanceToObject = (float) Math.Round(Vector3.Distance(this.CameraManager.ActiveCamera.Transform.Translation, collidee.Transform.Translation), DefaultDistanceToTargetPrecision);
+            EventDispatcher.Publish(new EventData(EventActionType.OnObjectPicked, EventCategoryType.ObjectPicking, new object[] { collidee, distanceToObject }));
         }
 
         private void HandleIntersection(GameTime gameTime, CollidablePrimitiveObject collidee)
         {
-            //remove the object if we want
-            if (this.pickingBehaviourType == PickingBehaviourType.PickAndRemove)
+            //If the picking behaviour is set to remove
+            if (this.PickingBehaviourType == PickingBehaviourType.PickAndRemove && StateManager.FinishedTracking)
             {
-                /*add code here to make a descision based on the ActorType and any keyboard, mouse or game pad input
-                e.g. 
-                if(this.collidee.ActorType == ActorType.CollidablePickup)
+                //If the collidee is tagged as breakable
+                if (collidee.GetID().Contains("Breakable"))
                 {
+                    //If the user has clicked to break this block
+                    if (this.InputManagerParameters.MouseManager.IsLeftButtonClickedOnce())
+                    {
+                        //Create an audio emitter at this location
+                        AudioEmitter audioEmitter = new AudioEmitter {
+                            Position = (collidee as Actor3D).Transform.Translation,
+                            Forward = this.CameraManager.ActiveCamera.Transform.Look,
+                            Up = this.CameraManager.ActiveCamera.Transform.Up
+                        };
 
-                }
-                else if(this.collidee.ActorType == ActorType.CollidablePlayer)
-                {
+                        //Publish sound event
+                        EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound3D, new object[] { "break", audioEmitter }));
 
-                }
-                */
+                        //Remove the block
+                        this.ObjectManager.Remove(collidee);
+                    } 
 
-                if (this.inputManagerParameters.MouseManager.IsLeftButtonClickedOnce())
-                {
-                    EventDispatcher.Publish(new EventData(collidee, EventActionType.OnRemoveActor, EventCategoryType.SystemRemove));
+                    //Otherwise, indicate to the user that this block is 'breakable'
+                    else
+                    {
+                        //Make object transparant
+                        collidee.EffectParameters.DiffuseColor = Color.AliceBlue;
+                        collidee.EffectParameters.Alpha = 0.5f;
+                    }
                 }  
             }
-
-
         }
 
         protected override void HandleMouse(GameTime gameTime)
         {
-
         }
 
         protected override void HandleKeyboard(GameTime gameTime)
         {
-
         }
 
         protected override void HandleGamePad(GameTime gameTime)
         {
-
         }
+        #endregion
     }
 }

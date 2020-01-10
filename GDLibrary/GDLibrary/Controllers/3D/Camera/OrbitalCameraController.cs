@@ -4,54 +4,29 @@ using System;
 
 namespace GDLibrary
 {
-    public enum Direction
-    {
-        PosX,
-        PosY,
-        PosZ,
-        NegX,
-        NegY,
-        NegZ
-    }
-
     public class OrbitalCameraController : UserInputController
     {
-        #region Fields
-        private float initialProjectionWidth;
-        private float initialProjectionHeight;
-
-        private int minZoom;
-        private int currentZoom;
-        private int maxZoom;
-
-        private Matrix rotationMatrix;
-        private Vector3 rotationVector;
-
-        private Vector3 targetPositionVector;
-        private Vector3 targetLookVector;
-        private Vector3 targetUpVector;
-
-        private bool isRotating;
-        private bool isMoving;
-        #endregion
-
         #region Properties
-        public float InitialProjectionHeight { get => initialProjectionHeight; set => initialProjectionHeight = value; }
-        public float InitialProjectionWidth { get => initialProjectionWidth; set => initialProjectionWidth = value; }
+        public float InitialProjectionHeight { get; set; }
+        public float InitialProjectionWidth { get; set; }
+        public SoundManager SoundManager { get; set; }
 
-        public int MinZoom { get => minZoom; set => minZoom = value; }
-        public int CurrentZoom { get => currentZoom; set => currentZoom = value; }
-        public int MaxZoom { get => maxZoom; set => maxZoom = value; }
+        public int MinZoom { get; set; }
+        public int CurrentZoom { get; set; }
+        public int MaxZoom { get; set; }
 
-        public Matrix RotationMatrix { get => rotationMatrix; set => rotationMatrix = value; }
-        public Vector3 RotationVector { get => rotationVector; set => rotationVector = value; }
+        public Matrix RotationMatrix { get; set; }
+        public Vector3 RotationVector { get; set; }
 
-        public Vector3 TargetPositionVector { get => targetPositionVector; set => targetPositionVector = value; }
-        public Vector3 TargetLookVector { get => targetLookVector; set => targetLookVector = value; }
-        public Vector3 TargetUpVector { get => targetUpVector; set => targetUpVector = value; }
+        public Vector3 TargetPositionVector { get; set; }
+        public Vector3 TargetLookVector { get; set; }
+        public Vector3 TargetUpVector { get; set; }
 
-        public bool IsRotating { get => isRotating; set => isRotating = value; }
-        public bool IsMoving { get => isMoving; set => isMoving = value; }
+        public bool IsRotating { get; set; }
+        public bool IsMoving { get; set; }
+
+        public float OrbitAngle { get; set; }
+        public float OrbitSpeed { get; set; }
         #endregion
 
         #region Constructor
@@ -60,20 +35,23 @@ namespace GDLibrary
             ControllerType controllerType,
             float initialProjectionWidth,
             float initialProjectionHeight,
+            float orbitSpeed,
+            float orbitAngle,
             Keys[] moveKeys,
-            float moveSpeed,
-            float strafeSpeed,
-            float rotationSpeed,
-            InputManagerParameters inputManagerParameters
-        ) : base(id, controllerType, moveKeys, moveSpeed, strafeSpeed, rotationSpeed, inputManagerParameters) {
+            InputManagerParameters inputManagerParameters,
+            SoundManager soundManager
+        ) : base(id, controllerType, moveKeys, inputManagerParameters) {
             this.InitialProjectionWidth = initialProjectionWidth;
             this.InitialProjectionHeight = initialProjectionHeight;
+            this.OrbitSpeed = orbitSpeed;
+            this.OrbitAngle = orbitAngle;
 
+            this.SoundManager = soundManager;
             this.MinZoom = 0;
             this.MaxZoom = 15;
 
-            StateManager.IsRotating = false;
-            StateManager.IsMoving = false;
+            StateManager.IsCameraMoving = false;
+            StateManager.IsCharacterMoving = false;
         }
         #endregion
 
@@ -81,64 +59,75 @@ namespace GDLibrary
         public override void HandleKeyboardInput(GameTime gameTime, Actor3D parentActor)
         {
             //If not already in motion
-            if (!StateManager.IsRotating && !StateManager.IsMoving)
+            if (!StateManager.IsCameraMoving && !StateManager.IsCharacterMoving && StateManager.FinishedTracking)
             {
+                //Cast to orbital camera
+                OrbitalCamera orbitalCamera = parentActor as OrbitalCamera;
+
                 //Orbit counter clockwise about up vector
                 if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[0]))
                 {
-                    this.OrbitCounterClockwiseAboutUpVector(gameTime, parentActor);
+                    this.OrbitCounterClockwiseAboutUpVector(gameTime, orbitalCamera);
+                    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
                 //Orbit clockwise about up vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[1]))
                 {
-                    this.OrbitClockwiseAboutUpVector(gameTime, parentActor);
+                    this.OrbitClockwiseAboutUpVector(gameTime, orbitalCamera);
+                    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
                 //Orbit counter clockwise about right vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[2]))
                 {
-                    this.OrbitCounterClockwiseAboutRightVector(gameTime, parentActor);
+                    this.OrbitCounterClockwiseAboutRightVector(gameTime, orbitalCamera);
+                    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
                 //Orbit clockwise about right vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[3]))
                 {
-                    this.OrbitClockwiseAboutRightVector(gameTime, parentActor);
+                    this.OrbitClockwiseAboutRightVector(gameTime, orbitalCamera);
+                    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
                 //Rotate clockwise about look vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[4]))
                 {
-                    this.RotateCounterClockwiseAboutLookVector(gameTime, parentActor);
+                    this.RotateClockwiseAboutLookVector(gameTime, orbitalCamera);
+                    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
                 //Rotate counter clockwise about look vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[5]))
                 {
-                    this.RotateClockwiseAboutLookVector(gameTime, parentActor);
+                    this.RotateCounterClockwiseAboutLookVector(gameTime, orbitalCamera);
+                    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
                 //Switch to orthographic view
-                else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[6]))
-                {
-                    StateManager.IsPerspective = false;
-                    (parentActor as OrbitalCamera).ProjectionParameters.IsDirty = true;
-                }
+                //else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[6]))
+                //{
+                //    StateManager.IsOrthographic = false;
+                //    parentActor.ProjectionParameters.IsDirty = true;
+                //    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "move" }));
+                //}
 
                 //Switch to perspective view
-                else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[7]))
-                {
-                    StateManager.IsPerspective = true;
-                    (parentActor as OrbitalCamera).ProjectionParameters.IsDirty = true;
-                }
+                //else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[7]))
+                //{
+                //    StateManager.IsOrthographic = true;
+                //    parentActor.ProjectionParameters.IsDirty = true;
+                //    EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "move" }));
+                //}
             }
         }
 
         public override void HandleMouseInput(GameTime gameTime, Actor3D parentActor)
         {
             //If not already in motion
-            if (!StateManager.IsRotating && !StateManager.IsMoving)
+            if (!StateManager.IsCameraMoving && !StateManager.IsCharacterMoving)
             {
                 //Store scroll wheel delta
                 int zoomDelta = -(this.InputManagerParameters.MouseManager.GetDeltaFromScrollWheel() / 120);
@@ -149,9 +138,40 @@ namespace GDLibrary
                     //Update current zoom
                     this.CurrentZoom = (this.CurrentZoom + zoomDelta);
 
-                    //Apply zoom
-                    (parentActor as OrbitalCamera).ProjectionParameters.Width += zoomDelta * InitialProjectionWidth / 10;
-                    (parentActor as OrbitalCamera).ProjectionParameters.Height += zoomDelta * InitialProjectionHeight / 10;
+                    //Apply zoom - orthogrpahic
+                    (parentActor as OrbitalCamera).ProjectionParameters.Width += (zoomDelta * InitialProjectionWidth) / 12;
+                    (parentActor as OrbitalCamera).ProjectionParameters.Height += (zoomDelta * InitialProjectionHeight) / 12;
+
+                    //Apply zoom - perspective
+                    if (parentActor.Transform.Look.Equals(Vector3.UnitX))
+                    {
+                        parentActor.Transform.Translation += (zoomDelta * -Vector3.UnitX);
+                    }
+
+                    else if (parentActor.Transform.Look.Equals(Vector3.UnitY))
+                    {
+                        parentActor.Transform.Translation += (zoomDelta * -Vector3.UnitY);
+                    }
+
+                    else if (parentActor.Transform.Look.Equals(Vector3.UnitZ))
+                    {
+                        parentActor.Transform.Translation += (zoomDelta * -Vector3.UnitZ);
+                    }
+
+                    else if (parentActor.Transform.Look.Equals(-Vector3.UnitX))
+                    {
+                        parentActor.Transform.Translation += (zoomDelta * Vector3.UnitX);
+                    }
+
+                    else if (parentActor.Transform.Look.Equals(-Vector3.UnitY))
+                    {
+                        parentActor.Transform.Translation += (zoomDelta * Vector3.UnitY);
+                    }
+
+                    else if (parentActor.Transform.Look.Equals(-Vector3.UnitZ))
+                    {
+                        parentActor.Transform.Translation += (zoomDelta * Vector3.UnitZ);
+                    }
                 }
             }
         }
@@ -179,314 +199,315 @@ namespace GDLibrary
         }
 
         #region Calculate Transformations
-        public void OrbitCounterClockwiseAboutUpVector(GameTime gameTime, Actor3D parentActor)
+        //Orbit counter-clockwise, about the up vector
+        public void OrbitCounterClockwiseAboutUpVector(GameTime gameTime, OrbitalCamera parentActor)
         {
             //Orbit counter-clockwise, relative to the +X axis, about the X axis
             if (parentActor.Transform.Up.Equals(Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit counter-clockwise, relative to the +Y axis, about the Y axis
             else if (parentActor.Transform.Up.Equals(Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit counter-clockwise, relative to the +Z axis, about the Z axis
             else if (parentActor.Transform.Up.Equals(Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit counter-clockwise, relative to the -X axis, about the X axis
             else if (parentActor.Transform.Up.Equals(-Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit counter-clockwise, relative to the -Y axis, about the Y axis
             else if (parentActor.Transform.Up.Equals(-Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit counter-clockwise, relative to the -Z axis, about the Z axis
             else if (parentActor.Transform.Up.Equals(-Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Look);
             }
         }
 
         //Orbit clockwise, about the up vector
-        public void OrbitClockwiseAboutUpVector(GameTime gameTime, Actor3D parentActor)
+        public void OrbitClockwiseAboutUpVector(GameTime gameTime, OrbitalCamera parentActor)
         {
             //Orbit clockwise, relative to the +X axis, about the X axis
             if (parentActor.Transform.Up.Equals(Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit clockwise, relative to the +Y axis, about the Y axis
             else if (parentActor.Transform.Up.Equals(Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit clockwise, relative to the +Z axis, about the Z axis
             else if (parentActor.Transform.Up.Equals(Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit clockwise, relative to the -X axis, about the X axis
             else if (parentActor.Transform.Up.Equals(-Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit clockwise, relative to the -Y axis, about the Y axis
             else if (parentActor.Transform.Up.Equals(-Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Look);
             }
 
             //Orbit clockwise, relative to the -Z axis, about the Z axis
             else if (parentActor.Transform.Up.Equals(-Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Look);
             }
         }
 
         //Orbit counter-clockwise, about the right vector
-        public void OrbitCounterClockwiseAboutRightVector(GameTime gameTime, Actor3D parentActor)
+        public void OrbitCounterClockwiseAboutRightVector(GameTime gameTime, OrbitalCamera parentActor)
         {
             //Orbit counter-clockwise, relative to the +X axis, about the X axis
             if (parentActor.Transform.Right.Equals(Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegX, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit counter-clockwise, relative to the +Y axis, about the Y axis
             else if (parentActor.Transform.Right.Equals(Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegY, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit counter-clockwise, relative to the +Z axis, about the Z axis
             else if (parentActor.Transform.Right.Equals(Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegZ, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit counter-clockwise, relative to the -X axis, about the X axis
             else if (parentActor.Transform.Right.Equals(-Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosX, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit counter-clockwise, relative to the -Y axis, about the Y axis
             else if (parentActor.Transform.Right.Equals(-Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosY, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit counter-clockwise, relative to the -Z axis, about the Z axis
             else if (parentActor.Transform.Right.Equals(-Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosZ, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Up);
             }
         }
 
         //Orbit down, about the right vector
-        public void OrbitClockwiseAboutRightVector(GameTime gameTime, Actor3D parentActor)
+        public void OrbitClockwiseAboutRightVector(GameTime gameTime, OrbitalCamera parentActor)
         {
             //Orbit about X
             if (parentActor.Transform.Right.Equals(Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosX, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit about Y
             else if (parentActor.Transform.Right.Equals(Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosY, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit about Z
             else if (parentActor.Transform.Right.Equals(Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.PosZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.PosZ, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit about -X
             else if (parentActor.Transform.Right.Equals(-Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegX, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegX, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegX, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegX, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit about -Y
             else if (parentActor.Transform.Right.Equals(-Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegY, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegY, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegY, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegY, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Orbit about -Z
             else if (parentActor.Transform.Right.Equals(-Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegZ, gameTime);
-                this.TargetPositionVector = CalculateTargetPositionVector(Direction.NegZ, parentActor);
-                this.TargetLookVector = CalculateTargetLookVector(Direction.NegZ, parentActor);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegZ, this.OrbitSpeed);
+                this.TargetPositionVector = MatrixUtility.CalculateTargetPositionVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Translation, parentActor.OrbitPoint);
+                this.TargetLookVector = MatrixUtility.CalculateTargetLookVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Look);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Up);
             }
         }
 
         //Rotate clockwise about the look vector
-        public void RotateClockwiseAboutLookVector(GameTime gameTime, Actor3D parentActor)
+        public void RotateClockwiseAboutLookVector(GameTime gameTime, OrbitalCamera parentActor)
         {
             //Rotate about +X
             if (parentActor.Transform.Look.Equals(Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosX, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosX, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about +Y
             else if (parentActor.Transform.Look.Equals(Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosY, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosY, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about +Z
             else if (parentActor.Transform.Look.Equals(Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosZ, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosZ, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about -X
             else if (parentActor.Transform.Look.Equals(-Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegX, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegX, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about -Y
             else if (parentActor.Transform.Look.Equals(-Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegY, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegY, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about -Z
             else if (parentActor.Transform.Look.Equals(-Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegZ, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegZ, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Up);
             }
         }
 
         //Rotate counter-clockwise about the look vector
-        public void RotateCounterClockwiseAboutLookVector(GameTime gameTime, Actor3D parentActor)
+        public void RotateCounterClockwiseAboutLookVector(GameTime gameTime, OrbitalCamera parentActor)
         {
             //Rotate about +X
             if (parentActor.Transform.Look.Equals(Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegX, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegX, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about +Y
             else if (parentActor.Transform.Look.Equals(Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegY, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegY, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about +Z
             else if (parentActor.Transform.Look.Equals(Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.NegZ, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.NegZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.NegZ, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about -X
             else if (parentActor.Transform.Look.Equals(-Vector3.UnitX))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosX, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosX, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosX, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosX, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about -Y
             else if (parentActor.Transform.Look.Equals(-Vector3.UnitY))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosY, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosY, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosY, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosY, this.OrbitAngle, parentActor.Transform.Up);
             }
 
             //Rotate about -Z
             else if (parentActor.Transform.Look.Equals(-Vector3.UnitZ))
             {
-                this.RotationMatrix = CalculateRotationMatrix(Direction.PosZ, gameTime);
-                this.TargetUpVector = CalculateTargetUpVector(Direction.PosZ, parentActor);
+                this.RotationMatrix = MatrixUtility.CalculateRotationMatrix(gameTime, Axis.PosZ, this.OrbitSpeed);
+                this.TargetUpVector = MatrixUtility.CalculateTargetUpVector(Axis.PosZ, this.OrbitAngle, parentActor.Transform.Up);
             }
         }
         #endregion
@@ -511,7 +532,7 @@ namespace GDLibrary
                 this.TargetUpVector = Vector3.Zero;
 
                 //Update motion state
-                StateManager.IsRotating = false;
+                StateManager.IsCameraMoving = false;
             }
             else
             {
@@ -519,7 +540,7 @@ namespace GDLibrary
                 parentActor.Transform.Up = Vector3.Transform(parentActor.Transform.Up, this.RotationMatrix);
 
                 //Update motion state
-                StateManager.IsRotating = true;
+                StateManager.IsCameraMoving = true;
             }
         }
 
@@ -540,9 +561,9 @@ namespace GDLibrary
             );
 
             //If the current vector is near the target vector (magnified by the current zoom)
-            if (Vector3.Distance(parentActor.Transform.Translation, this.TargetPositionVector) <= Math.Abs(0.2f + (this.CurrentZoom * 0.1f)))
+            if (Vector3.Distance(parentActor.Transform.Translation, this.TargetPositionVector) <= Math.Abs(0.2f + (this.CurrentZoom * this.OrbitSpeed)))
             {
-                //Update translation vector
+                //Update camera position
                 parentActor.Transform.Translation = this.TargetPositionVector;
 
                 //Update look vector
@@ -553,7 +574,7 @@ namespace GDLibrary
                 this.TargetLookVector = Vector3.Zero;
 
                 //Update motion state
-                StateManager.IsMoving = false;
+                StateManager.IsCameraMoving = false;
             }
             else
             {
@@ -570,115 +591,14 @@ namespace GDLibrary
                 parentActor.Transform.Translation += (parentActor as OrbitalCamera).OrbitPoint;
 
                 //Update motion state
-                StateManager.IsMoving = true;
+                StateManager.IsCameraMoving = true;
             }
         }
-        #endregion
 
-        #region Utility Methods
-        private Matrix CalculateRotationMatrix(Direction axis, GameTime gameTime)
+        public void UpdateListenerPosition(Actor3D parentActor)
         {
-            switch (axis)
-            {
-                case Direction.PosX:
-                    return Matrix.CreateRotationX(MathHelper.ToRadians(0.1f) * (float)gameTime.ElapsedGameTime.Milliseconds);
-
-                case Direction.PosY:
-                    return Matrix.CreateRotationY(MathHelper.ToRadians(0.1f) * (float)gameTime.ElapsedGameTime.Milliseconds);
-
-                case Direction.PosZ:
-                    return Matrix.CreateRotationZ(MathHelper.ToRadians(0.1f) * (float)gameTime.ElapsedGameTime.Milliseconds);
-
-                case Direction.NegX:
-                    return Matrix.CreateRotationX(MathHelper.ToRadians(-0.1f) * (float)gameTime.ElapsedGameTime.Milliseconds);
-
-                case Direction.NegY:
-                    return Matrix.CreateRotationY(MathHelper.ToRadians(-0.1f) * (float)gameTime.ElapsedGameTime.Milliseconds);
-
-                case Direction.NegZ:
-                    return Matrix.CreateRotationZ(MathHelper.ToRadians(-0.1f) * (float)gameTime.ElapsedGameTime.Milliseconds);
-            }
-
-            return Matrix.Identity;
-        }
-
-        //Translates vector to origin, rotates vector by 90 degrees, translates vector back to orbit point
-        private Vector3 CalculateTargetPositionVector(Direction axis, Actor3D parentActor)
-        {
-            switch (axis)
-            {
-                case Direction.PosX:
-                    return Vector3.Transform((parentActor.Transform.Translation - (parentActor as OrbitalCamera).OrbitPoint), Matrix.CreateRotationX(MathHelper.ToRadians(90))) + (parentActor as OrbitalCamera).OrbitPoint;
-
-                case Direction.PosY:
-                    return Vector3.Transform((parentActor.Transform.Translation - (parentActor as OrbitalCamera).OrbitPoint), Matrix.CreateRotationY(MathHelper.ToRadians(90))) + (parentActor as OrbitalCamera).OrbitPoint;
-
-                case Direction.PosZ:
-                    return Vector3.Transform((parentActor.Transform.Translation - (parentActor as OrbitalCamera).OrbitPoint), Matrix.CreateRotationZ(MathHelper.ToRadians(90))) + (parentActor as OrbitalCamera).OrbitPoint;
-
-                case Direction.NegX:
-                    return Vector3.Transform((parentActor.Transform.Translation - (parentActor as OrbitalCamera).OrbitPoint), Matrix.CreateRotationX(MathHelper.ToRadians(-90))) + (parentActor as OrbitalCamera).OrbitPoint;
-
-                case Direction.NegY:
-                    return Vector3.Transform((parentActor.Transform.Translation - (parentActor as OrbitalCamera).OrbitPoint), Matrix.CreateRotationY(MathHelper.ToRadians(-90))) + (parentActor as OrbitalCamera).OrbitPoint;
-
-                case Direction.NegZ:
-                    return Vector3.Transform((parentActor.Transform.Translation - (parentActor as OrbitalCamera).OrbitPoint), Matrix.CreateRotationZ(MathHelper.ToRadians(-90))) + (parentActor as OrbitalCamera).OrbitPoint;
-            }
-
-            return Vector3.Zero;
-        }
-
-        private Vector3 CalculateTargetLookVector(Direction axis, Actor3D parentActor)
-        {
-            switch(axis)
-            {
-                case Direction.PosX:
-                    return Vector3.Transform(parentActor.Transform.Look, Matrix.CreateRotationX(MathHelper.ToRadians(90)));
-
-                case Direction.PosY:
-                    return Vector3.Transform(parentActor.Transform.Look, Matrix.CreateRotationY(MathHelper.ToRadians(90)));
-
-                case Direction.PosZ:
-                    return Vector3.Transform(parentActor.Transform.Look, Matrix.CreateRotationZ(MathHelper.ToRadians(90)));
-
-                case Direction.NegX:
-                    return Vector3.Transform(parentActor.Transform.Look, Matrix.CreateRotationX(MathHelper.ToRadians(-90)));
-
-                case Direction.NegY:
-                    return Vector3.Transform(parentActor.Transform.Look, Matrix.CreateRotationY(MathHelper.ToRadians(-90)));
-
-                case Direction.NegZ:
-                    return Vector3.Transform(parentActor.Transform.Look, Matrix.CreateRotationZ(MathHelper.ToRadians(-90)));
-            }
-
-            return Vector3.Zero;
-        }
-
-        private Vector3 CalculateTargetUpVector(Direction axis, Actor3D parentActor)
-        {
-            switch (axis)
-            {
-                case Direction.PosX:
-                    return Vector3.Transform(parentActor.Transform.Up, Matrix.CreateRotationX(MathHelper.ToRadians(90)));
-
-                case Direction.PosY:
-                    return Vector3.Transform(parentActor.Transform.Up, Matrix.CreateRotationY(MathHelper.ToRadians(90)));
-
-                case Direction.PosZ:
-                    return Vector3.Transform(parentActor.Transform.Up, Matrix.CreateRotationZ(MathHelper.ToRadians(90)));
-
-                case Direction.NegX:
-                    return Vector3.Transform(parentActor.Transform.Up, Matrix.CreateRotationX(MathHelper.ToRadians(-90)));
-
-                case Direction.NegY:
-                    return Vector3.Transform(parentActor.Transform.Up, Matrix.CreateRotationY(MathHelper.ToRadians(-90)));
-
-                case Direction.NegZ:
-                    return Vector3.Transform(parentActor.Transform.Up, Matrix.CreateRotationZ(MathHelper.ToRadians(-90)));
-            }
-
-            return Vector3.Zero;
+            //Update listener position
+            this.SoundManager.UpdateListenerPosition(parentActor.Transform.Translation, parentActor.Transform.Look, parentActor.Transform.Up);
         }
         #endregion
 
@@ -688,6 +608,7 @@ namespace GDLibrary
             this.HandleKeyboardInput(gameTime, parentActor);
             this.HandleMouseInput(gameTime, parentActor);
             this.HandleMovement(gameTime, parentActor);
+            this.UpdateListenerPosition(parentActor);
         }
         #endregion
     }

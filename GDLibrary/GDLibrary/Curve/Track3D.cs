@@ -29,6 +29,7 @@ namespace GDLibrary
                 this.position = value;
             }
         }
+
         public Vector3 Scale
         {
             get
@@ -40,6 +41,7 @@ namespace GDLibrary
                 this.scale = value;
             }
         }
+
         public float Rotation
         {
             get
@@ -51,6 +53,7 @@ namespace GDLibrary
                 this.rotation = value;
             }
         }
+
         public float TimeInSecs
         {
             get
@@ -62,6 +65,7 @@ namespace GDLibrary
                 this.timeInSecs = value;
             }
         }
+
         public float TimeInMs
         {
             get
@@ -71,6 +75,7 @@ namespace GDLibrary
         }
         #endregion
 
+        #region Constructors
         public Track3DOffsets(Vector3 position, Vector3 scale, float rotation, float timeInSecs)
         {
             this.position = position;
@@ -78,10 +83,14 @@ namespace GDLibrary
             this.rotation = rotation;
             this.timeInSecs = timeInSecs;
         }
+        #endregion
+
+        #region Methods
         public object Clone()
         {
             return this.MemberwiseClone(); //simple C# or XNA types so use MemberwiseClone()
         }
+        #endregion
     }
 
     //Represents a 3D point on a camera curve (i.e. position, look, and up) at a specified time in seconds
@@ -97,12 +106,14 @@ namespace GDLibrary
             this.lookCurve = new Curve3D(curveLoopType);
             this.upCurve = new Curve3D(curveLoopType);
         }
+
         public void Add(Vector3 translation, Vector3 look, Vector3 up, float timeInSecs)
         {
             this.translationCurve.Add(translation, timeInSecs);
             this.lookCurve.Add(look, timeInSecs);
             this.upCurve.Add(up, timeInSecs);
         }
+
         public void Clear()
         {
             this.translationCurve.Clear();
@@ -111,8 +122,7 @@ namespace GDLibrary
         }
 
         //See https://msdn.microsoft.com/en-us/library/t3c3bfhx.aspx for information on using the out keyword
-        public void Evalulate(float timeInSecs, int precision,
-            out Vector3 translation, out Vector3 look, out Vector3 up)
+        public void Evalulate(float timeInSecs, int precision, out Vector3 translation, out Vector3 look, out Vector3 up)
         {
             translation = this.translationCurve.Evaluate(timeInSecs, precision);
             look = this.lookCurve.Evaluate(timeInSecs, precision);

@@ -32,6 +32,9 @@ namespace GDLibrary
         UIButton,
         UIText,
         UITexture,
+        UnbrekableBlock,
+        Goal,
+        Objective,
     }
 }
 

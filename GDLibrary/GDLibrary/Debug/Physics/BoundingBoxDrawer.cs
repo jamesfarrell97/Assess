@@ -8,10 +8,11 @@ namespace GDLibrary
     //See http://timjones.tw/blog/archive/2010/12/10/drawing-an-xna-model-bounding-box
     public class BoundingBoxBuffers
     {
-        public VertexBuffer Vertices;
         public int VertexCount;
-        public IndexBuffer Indices;
         public int PrimitiveCount;
+
+        public VertexBuffer Vertices;
+        public IndexBuffer Indices;
     }
 
     //See http://timjones.tw/blog/archive/2010/12/10/drawing-an-xna-model-bounding-box
