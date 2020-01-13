@@ -82,6 +82,7 @@ namespace GDLibrary
         public static readonly string MenuPauseID = "Pause Menu";
         public static readonly string ScreenLoseID = "Lose Screen";
         public static readonly string ScreenWinID = "Win Screen";
+        public static readonly string ScreenEndID = "End Screen";
         #endregion
 
         #region Messages

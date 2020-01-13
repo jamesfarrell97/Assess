@@ -33,8 +33,8 @@ namespace GDLibrary
         public static bool InProximityOfAnItem { get; set; }
         public static bool InProximityOfAGate { get; set; }
         public static bool ContinueClicked { get; set; }
+        public static bool MainMenuClicked { get; set; }
         public static bool ResumeClicked { get; set; }
-        public static bool RestartClicked { get; set; }
         public static bool PlayerDied { get; set; }
         public static bool LevelClear { get; set; }
         public static bool FinishedTracking { get; set; }
@@ -99,7 +99,6 @@ namespace GDLibrary
             InProximityOfAnItem = false;
             InProximityOfAGate = false;
             ContinueClicked = false;
-            RestartClicked = false;
             PlayerDied = false;
             LevelClear = false;
         }

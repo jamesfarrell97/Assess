@@ -71,11 +71,7 @@ namespace GDApp
                 case "controls_button":
                     SetActiveList(AppData.MenuControlsID);
                     break;
-
-                case "back_button":
-                    SetActiveList(AppData.MenuMainID);
-                    break;
-
+                    
                 case "exit_button":
                     DoExit();
                     break;
@@ -104,8 +100,8 @@ namespace GDApp
                     StateManager.ResumeClicked = true;
                     break;
 
-                case "quit_button":
-                    SetActiveList(AppData.MenuMainID);
+                case "main_menu_button":
+                    StateManager.MainMenuClicked = true;
                     break;
             }
             

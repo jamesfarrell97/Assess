@@ -35,6 +35,7 @@ namespace GDApp
         private CameraManager cameraManager;
         private PickingManager pickingManager;
         private SoundManager soundManager;
+        private TextboxManager textboxManager;
         private MyMenuManager menuManager;
         private UIManager uiManager;
 
@@ -43,6 +44,7 @@ namespace GDApp
 
         private string[] levels;
         private int[,,] levelMap;
+        private Vector3 trackCameraUp;
         private Vector3 trackCameraLook;
         private Vector3 cameraPosition;
         private Vector3 cameraOrbitPoint;
@@ -75,7 +77,6 @@ namespace GDApp
         private int xDimension = 0;
         private int yDimension = 0;
         private int zDimension = 0;
-        private TextboxManager textboxManager;
         #endregion
 
         #region Constructors
@@ -605,8 +606,8 @@ namespace GDApp
             clone = (UIButtonObject)uiButtonObject.Clone();
 
             clone.Transform.Translation += new Vector2(0, 4 * verticalBtnSeparation);
-            clone.ID = "back_button";
-            clone.Text = "Back";
+            clone.ID = "main_menu_button";
+            clone.Text = "Main Menu";
 
             clone.Color = Color.DimGray;
             this.menuManager.Add(sceneID, clone);
@@ -639,10 +640,53 @@ namespace GDApp
             clone = (UIButtonObject)uiButtonObject.Clone();
 
             clone.Transform.Translation = new Vector2(graphics.PreferredBackBufferWidth - 175, graphics.PreferredBackBufferHeight - 72);
-            clone.ID = "back_button";
-            clone.Text = "Back";
+            clone.ID = "main_menu_button";
+            clone.Text = "Main Menu";
 
             clone.Color = Color.DimGray;
+            this.menuManager.Add(sceneID, clone);
+            #endregion
+
+            #region Pause Menu
+            sceneID = AppData.MenuPauseID;
+            texture = this.textureDictionary["pause_menu"];
+
+            scale = new Vector2(
+                (float)graphics.PreferredBackBufferWidth / texture.Width,
+                (float)graphics.PreferredBackBufferHeight / texture.Height
+            );
+
+            this.menuManager.Add(
+                sceneID,
+                new UITextureObject(
+                    "Pause Menu Texture",
+                    ActorType.UITexture,
+                    StatusType.Drawn,
+                    new Transform2D(scale),
+                    Color.White,
+                    SpriteEffects.None,
+                    1,
+                    texture
+                )
+            );
+
+            //Resume
+            clone = (UIButtonObject)uiButtonObject.Clone();
+
+            clone.ID = "resume_button";
+            clone.Text = "Resume";
+
+            clone.Color = Color.White;
+            this.menuManager.Add(sceneID, clone);
+
+            //Quit button
+            clone = (UIButtonObject)uiButtonObject.Clone();
+
+            clone.Transform.Translation += new Vector2(0, 1 * verticalBtnSeparation);
+            clone.ID = "main_menu_button";
+            clone.Text = "Main Menu";
+
+            clone.Color = Color.LightGray;
             this.menuManager.Add(sceneID, clone);
             #endregion
 
@@ -714,9 +758,9 @@ namespace GDApp
             this.menuManager.Add(sceneID, clone);
             #endregion
 
-            #region Pause Menu
-            sceneID = AppData.MenuPauseID;
-            texture = this.textureDictionary["pause_menu"];
+            #region End Screen
+            sceneID = AppData.ScreenEndID;
+            texture = this.textureDictionary["end_screen"];
 
             scale = new Vector2(
                 (float)graphics.PreferredBackBufferWidth / texture.Width,
@@ -726,7 +770,7 @@ namespace GDApp
             this.menuManager.Add(
                 sceneID,
                 new UITextureObject(
-                    "Pause Menu Texture",
+                    "End Screen Texture",
                     ActorType.UITexture,
                     StatusType.Drawn,
                     new Transform2D(scale),
@@ -737,23 +781,14 @@ namespace GDApp
                 )
             );
 
-            //Resume
+            //Main menu button
             clone = (UIButtonObject)uiButtonObject.Clone();
 
-            clone.ID = "resume_button";
-            clone.Text = "Resume";
+            clone.Transform.Translation = new Vector2(graphics.PreferredBackBufferWidth - 175, graphics.PreferredBackBufferHeight - 72);
+            clone.ID = "main_menu_button";
+            clone.Text = "Main Menu";
 
-            clone.Color = Color.White;
-            this.menuManager.Add(sceneID, clone);
-
-            //Quit button
-            clone = (UIButtonObject)uiButtonObject.Clone();
-
-            clone.Transform.Translation += new Vector2(0, 1 * verticalBtnSeparation);
-            clone.ID = "quit_button";
-            clone.Text = "Quit";
-
-            clone.Color = Color.LightGray;
+            clone.Color = Color.DimGray;
             this.menuManager.Add(sceneID, clone);
             #endregion
         }
@@ -1449,29 +1484,26 @@ namespace GDApp
         {
             Track3D levelTrack = null;
             this.trackCameraLook = -Vector3.UnitZ;
+            this.trackCameraUp = Vector3.UnitY;
 
             switch(StateManager.CurrentLevel)
             {
                 case 1:
                     #region Level 1
                     levelTrack = new Track3D(CurveLoopType.Constant);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 0);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 0);
+                    
+                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, AppData.OrbitAngle / 2, this.trackCameraUp);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
 
-                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
-                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 2);
+                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, -AppData.OrbitAngle, this.trackCameraUp);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
 
-                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
-                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 4);
-
-                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
-                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 6);
-
-                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
-                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 8);
+                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, AppData.OrbitAngle, this.trackCameraUp);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
+                    
+                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, -AppData.OrbitAngle / 2, this.trackCameraUp);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
 
                     this.trackDictionary.Add("track_level_1", levelTrack);
                     this.levelTrackTime[0] = 8;
@@ -1485,19 +1517,19 @@ namespace GDApp
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 2);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 4);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 6);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 8);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
 
                     this.trackDictionary.Add("track_level_2", levelTrack);
                     this.levelTrackTime[1] = 8;
@@ -1511,19 +1543,19 @@ namespace GDApp
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 2);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 4);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 6);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
 
                     this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
                     this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 8);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
 
                     this.trackDictionary.Add("track_level_3", levelTrack);
                     this.levelTrackTime[2] = 8;
@@ -1547,14 +1579,17 @@ namespace GDApp
             this.textureDictionary.Load("skybox_right", "Assets/Textures/Skybox/right");
             this.textureDictionary.Load("skybox_back", "Assets/Textures/Skybox/back");
 
-            //Menu
+            //Menus
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/main_menu");
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/audio_menu");
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/controls_menu");
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/pause_menu");
+
+            //Screens
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/exit_screen");
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/lose_screen");
             this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/win_screen");
+            this.textureDictionary.Load("Assets/Textures/UI/Menu/Backgrounds/end_screen");
 
             //Buttons
             this.textureDictionary.Load("Assets/Textures/UI/Buttons/button_background");
@@ -1822,6 +1857,7 @@ namespace GDApp
 
             CheckResumeClicked();
             CheckContinueClicked();
+            CheckMainMenuClicked();
 
             CheckTrackComplete();
         }
@@ -1830,16 +1866,19 @@ namespace GDApp
         {
             if (StateManager.LevelClear)
             {
+                StateManager.LevelClear = false;
+
+                if (++StateManager.CurrentLevel == this.levels.Length)
+                {
+                    GameWon();
+                    return;
+                }
+
                 EventDispatcher.Publish(new EventData(EventActionType.OnCameraSetActive, EventCategoryType.Camera, new object[] { AppData.TrackCameraID }));
                 EventDispatcher.Publish(new EventData(EventActionType.OnActive, EventCategoryType.Menu, new object[] { AppData.ScreenWinID }));
                 EventDispatcher.Publish(new EventData(EventActionType.OnPause, EventCategoryType.Sound2D, new object[] { "awakening" }));
                 EventDispatcher.Publish(new EventData(EventActionType.OnPause, EventCategoryType.Sound2D, new object[] { "fall" }));
                 EventDispatcher.Publish(new EventData(EventActionType.OnPause, EventCategoryType.Menu));
-
-                StateManager.LevelClear = false;
-                StateManager.CurrentLevel++;
-
-                WriteLevelToFile();
             }
         }
 
@@ -1909,6 +1948,16 @@ namespace GDApp
             }
         }
 
+        private void CheckMainMenuClicked()
+        {
+            if (StateManager.MainMenuClicked)
+            {
+                EventDispatcher.Publish(new EventData(EventActionType.OnActive, EventCategoryType.Menu, new object[] { AppData.MenuMainID }));
+                StateManager.MainMenuClicked = false;
+                ResetMap();
+            }
+        }
+
         private void CheckTrackComplete()
         {
             if (StateManager.FinishedTracking) return;
@@ -1937,7 +1986,11 @@ namespace GDApp
 
         private void GameWon()
         {
-            Initialize();
+            EventDispatcher.Publish(new EventData(EventActionType.OnActive, EventCategoryType.Menu, new object[] { AppData.ScreenEndID }));
+            EventDispatcher.Publish(new EventData(EventActionType.OnPause, EventCategoryType.Menu));
+            StateManager.CurrentLevel = 1;
+
+            ResetMap();
         }
         #endregion
 

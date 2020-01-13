@@ -83,8 +83,10 @@ namespace GDLibrary
             }
             else
             {
-                List<DrawnActor2D> newList = new List<DrawnActor2D>();
-                newList.Add(actor);
+                List<DrawnActor2D> newList = new List<DrawnActor2D> {
+                    actor
+                };
+
                 this.menuDictionary.Add(menuSceneID, newList);
             }
 
