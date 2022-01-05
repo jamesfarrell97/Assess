@@ -75,7 +75,7 @@ Global Settings
         Name = Music;
         Public = 1;
         Background Music = 1;
-        Volume = 0;
+        Volume = -300;
 
         Category Entry
         {
@@ -251,14 +251,8 @@ Wave Bank
     Windows Bank Path Edited = 0;
     Seek Tables = 1;
     Compression Preset Name = <none>;
-    Xbox Bank Last Modified Low = 0;
-    Xbox Bank Last Modified High = 0;
-    PC Bank Last Modified Low = 0;
-    PC Bank Last Modified High = 0;
-    Header Last Modified Low = 0;
-    Header Last Modified High = 0;
-    Bank Last Revised Low = 1713715468;
-    Bank Last Revised High = 30788103;
+    Bank Last Revised Low = 847286713;
+    Bank Last Revised High = 30788318;
 
     Wave
     {
@@ -563,22 +557,22 @@ Wave Bank
     {
         Name = incomplete;
         File = incomplete.wav;
-        Build Settings Last Modified Low = 1385485899;
-        Build Settings Last Modified High = 30788103;
+        Build Settings Last Modified Low = 827817606;
+        Build Settings Last Modified High = 30788318;
 
         Cache
         {
             Format Tag = 0;
             Channels = 2;
-            Sampling Rate = 48000;
+            Sampling Rate = 44100;
             Bits Per Sample = 1;
             Play Region Offset = 44;
-            Play Region Length = 324336;
+            Play Region Length = 188416;
             Loop Region Offset = 0;
             Loop Region Length = 0;
             File Type = 1;
-            Last Modified Low = 3072995636;
-            Last Modified High = 30788102;
+            Last Modified Low = 513689806;
+            Last Modified High = 30788318;
         }
     }
 }
@@ -590,8 +584,6 @@ Sound Bank
     Windows File = Win\SoundBank.xsb;
     Xbox Bank Path Edited = 0;
     Windows Bank Path Edited = 0;
-    Header Last Modified High = 0;
-    Header Last Modified Low = 0;
 
     Sound
     {
@@ -644,7 +636,7 @@ Sound Bank
     Sound
     {
         Name = fall;
-        Volume = -400;
+        Volume = -1200;
         Pitch = 0;
         Priority = 0;
 
@@ -691,7 +683,7 @@ Sound Bank
     Sound
     {
         Name = select;
-        Volume = -500;
+        Volume = -700;
         Pitch = 0;
         Priority = 0;
 
@@ -927,7 +919,7 @@ Sound Bank
     Sound
     {
         Name = orbit;
-        Volume = 0;
+        Volume = -300;
         Pitch = 0;
         Priority = 0;
 
@@ -974,7 +966,7 @@ Sound Bank
     Sound
     {
         Name = goal_001;
-        Volume = 0;
+        Volume = -400;
         Pitch = 0;
         Priority = 0;
 
@@ -1021,7 +1013,7 @@ Sound Bank
     Sound
     {
         Name = goal_004;
-        Volume = 0;
+        Volume = -400;
         Pitch = 0;
         Priority = 0;
 
@@ -1068,7 +1060,7 @@ Sound Bank
     Sound
     {
         Name = goal_003;
-        Volume = 0;
+        Volume = -400;
         Pitch = 0;
         Priority = 0;
 
@@ -1115,7 +1107,7 @@ Sound Bank
     Sound
     {
         Name = goal_002;
-        Volume = 0;
+        Volume = -400;
         Pitch = 0;
         Priority = 0;
 
@@ -1162,7 +1154,7 @@ Sound Bank
     Sound
     {
         Name = success;
-        Volume = 0;
+        Volume = -400;
         Pitch = 0;
         Priority = 0;
 
@@ -1209,13 +1201,13 @@ Sound Bank
     Sound
     {
         Name = incomplete;
-        Volume = -400;
+        Volume = -100;
         Pitch = 0;
         Priority = 0;
 
         Category Entry
         {
-            Name = Sound Effects;
+            Name = Default;
         }
 
         Track

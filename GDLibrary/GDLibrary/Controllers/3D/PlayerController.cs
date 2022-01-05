@@ -50,7 +50,7 @@ namespace GDLibrary
         #region Methods
         public void CalculatePositionUpdate(GameTime gameTime, Actor3D parentActor)
         {
-            if (!StateManager.IsCharacterMoving && !StateManager.IsCameraMoving && !StateManager.LevelClear && !StateManager.PlayerDied)
+            if (!StateManager.IsCharacterMoving && !StateManager.IsCameraMoving && !StateManager.LevelClear && !StateManager.PlayerDied && StateManager.FinishedTracking)
             {
                 //Store player position as collision poisition
                 Transform3D collisionTransform = parentActor.Transform.Clone() as Transform3D;
@@ -207,14 +207,6 @@ namespace GDLibrary
             }
         }
 
-        public void CheckCollision(Actor3D parentActor)
-        {
-            //foreach (IActor actor in this.ObjectManager.OpaqueDrawList.Concat(this.ObjectManager.TransparentDrawList))
-            //    if (actor.GetID().Equals("Win Block"))
-            //        if (Vector3.Distance(parentActor.Transform.Translation, (actor as Actor3D).Transform.Translation) <= 1)
-            //            StateManager.LevelClear = true;
-        }
-
         public void CheckCollision(GameTime gameTime, Actor3D parentActor)
         {
             //Check for collision
@@ -247,6 +239,9 @@ namespace GDLibrary
 
                     //Update current goal
                     StateManager.CurrentGoalInLoop++;
+
+                    //Update game
+                    StateManager.GameUpdated = true;
                 }
 
                 //If there is a collision with an objective
@@ -262,6 +257,9 @@ namespace GDLibrary
 
                         //Update game state
                         StateManager.LevelClear = true;
+
+                        //Update game
+                        StateManager.GameUpdated = true;
                     }
 
                     else if (!StateManager.IncompletePlayed)

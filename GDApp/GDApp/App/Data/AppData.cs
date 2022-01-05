@@ -49,11 +49,11 @@ namespace GDLibrary
 
         #region Map
         //Determines the amount of bits assigned to each component in the bit-shifted 3D array of map values
-        public static int ReservedBreakableBlockBits = 3;      //2^3 (8) Breakable Block Types
-        public static int ReservedUnbreakableBlockBits = 3;    //2^3 (8) Un-Breakable Block Types
-        public static int ReservedGoalBits = 3;                //2^3 (8) Goal Types
-        public static int ReservedObjectiveBits = 3;           //2^3 (8) Objective Types
-        public static int ReservedPlayerBits = 3;              //2^3 (8) Players
+        public static int ReservedBreakableBlockBits = 4;      //2^4 (16) Levels of Breakable Block Opacity
+        public static int ReservedUnbreakableBlockBits = 4;    //2^4 (16) Levels of Un-Breakable Block Opacity
+        public static int ReservedGoalBits = 4;                //2^4 (16) Levels of Goal Opacity
+        public static int ReservedObjectiveBits = 4;           //2^4 (16) Levels of Objective Opacity
+        public static int ReservedPlayerBits = 4;              //2^4 (16) Levels of Player Opacity
 
         //Determines the position of each component in the level data text file
         public static readonly int BreakableBlocksStartPosition = 1;
@@ -86,15 +86,6 @@ namespace GDLibrary
         #endregion
 
         #region Messages
-        public static readonly string[] TextboxMessages = new string[] {
-            "Collect all gems to finish the level",
-            "Complete each level by reaching the purple orb",
-            "Press 'R' to reset",
-            "Press 'Q' or 'E' to rotate",
-            "Press 'W', 'A', 'S', or 'D' to orbit",
-            "Click on white blocks to break them"
-        };
-
         public static int TimePerMessage = 8;
         #endregion
 
@@ -138,7 +129,7 @@ namespace GDLibrary
         public static readonly string TrackCameraControllerID = "Track Camera Controller";
         public static readonly string OrbitalCameraControllerID = "Orbital Camera Controller";
         #endregion
-
+        
         #region Camera ID's
         public static readonly string TrackCameraID = "Track";
         public static readonly string OrbitCameraID = "Orbit";

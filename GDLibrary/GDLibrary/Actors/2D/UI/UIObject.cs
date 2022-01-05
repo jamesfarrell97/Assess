@@ -19,13 +19,22 @@ namespace GDLibrary
         }
         #endregion
 
-        public UIObject(string id, ActorType actorType, StatusType statusType, Transform2D transform,
-            Color color, SpriteEffects spriteEffects, float layerDepth)
-            : base(id, actorType, transform, statusType, color, spriteEffects, layerDepth)
+        #region Constructors
+        public UIObject(
+            string id,
+            ActorType actorType,
+            StatusType statusType,
+            Transform2D transform,
+            Color color,
+            SpriteEffects spriteEffects,
+            float layerDepth
+        ) : base(id, actorType, transform, statusType, color, spriteEffects, layerDepth)
         {
-            this.mouseOverState = new StatefulBool(2); 
+            this.mouseOverState = new StatefulBool(2);
         }
+        #endregion
 
+        #region Methods
         public override int GetHashCode()
         {
             int hash = 1;
@@ -39,5 +48,6 @@ namespace GDLibrary
             this.mouseOverState = null;
             return base.Remove();
         }
+        #endregion
     }
 }

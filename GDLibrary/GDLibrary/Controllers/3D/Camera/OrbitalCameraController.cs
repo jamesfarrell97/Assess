@@ -64,28 +64,28 @@ namespace GDLibrary
                 //Cast to orbital camera
                 OrbitalCamera orbitalCamera = parentActor as OrbitalCamera;
 
-                //Orbit counter clockwise about up vector
+                //Orbit clockwise about up vector
                 if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[0]))
                 {
                     this.OrbitCounterClockwiseAboutUpVector(gameTime, orbitalCamera);
                     EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
-                //Orbit clockwise about up vector
+                //Orbit counter-clockwise about up vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[1]))
                 {
                     this.OrbitClockwiseAboutUpVector(gameTime, orbitalCamera);
                     EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
-                //Orbit counter clockwise about right vector
+                //Orbit clockwise about right vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[2]))
                 {
                     this.OrbitCounterClockwiseAboutRightVector(gameTime, orbitalCamera);
                     EventDispatcher.Publish(new EventData(EventActionType.OnPlay, EventCategoryType.Sound2D, new object[] { "orbit" }));
                 }
 
-                //Orbit clockwise about right vector
+                //Orbit counter-clockwise about right vector
                 else if (this.InputManagerParameters.KeyboardManager.IsFirstKeyPress(this.MoveKeys[3]))
                 {
                     this.OrbitClockwiseAboutRightVector(gameTime, orbitalCamera);
@@ -132,7 +132,7 @@ namespace GDLibrary
                 //Store scroll wheel delta
                 int zoomDelta = -(this.InputManagerParameters.MouseManager.GetDeltaFromScrollWheel() / 120);
 
-                //If zoom set, and if zoom within range
+                //If zoom set, and if zoom within min/max range
                 if (zoomDelta != 0 && (this.CurrentZoom + zoomDelta >= this.MinZoom) && (this.CurrentZoom + zoomDelta <= this.MaxZoom))
                 {
                     //Update current zoom

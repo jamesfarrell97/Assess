@@ -333,6 +333,13 @@ namespace GDApp
 
             Components.Add(this.pickingManager);
             #endregion
+
+            #region Draw Order
+            this.objectManager.DrawOrder = 1;
+            this.uiManager.DrawOrder = 2;
+            this.textboxManager.DrawOrder = 3;
+            this.menuManager.DrawOrder = 4;
+            #endregion
         }
 
         private void InitializeMap()
@@ -727,7 +734,7 @@ namespace GDApp
             #region Win Screen
             sceneID = AppData.ScreenWinID;
             texture = this.textureDictionary["win_screen"];
-
+        
             scale = new Vector2(
                 (float)graphics.PreferredBackBufferWidth / texture.Width,
                 (float)graphics.PreferredBackBufferHeight / texture.Height
@@ -996,7 +1003,7 @@ namespace GDApp
 
         private void LoadProgressFromFile()
         {
-            if (File.Exists("App/Data/CurrentLeve.txt"))
+            if (File.Exists("App/Data/CurrentLevel.txt"))
                 StateManager.CurrentLevel = int.Parse(File.ReadAllText("App/Data/CurrentLevel.txt"));
             else
                 StateManager.CurrentLevel = 1;
@@ -1049,8 +1056,7 @@ namespace GDApp
             foreach (string layer in layers)
             {
                 //Cleanup layer
-                string cleanLayer;
-                cleanLayer = layer.Trim();
+                string cleanLayer = layer.Trim();
 
                 //Split the current layer into lines
                 string[] lines = cleanLayer.Split('/');
@@ -1065,11 +1071,11 @@ namespace GDApp
                 foreach (string line in lines)
                 {
                     //Cleanup line
-                    string cellLine;
-                    cellLine = line.Split('-')[1].Trim();            //Measures room element of the text file - see GDApp/App/Data/levelData.txt
-                                                                     //Makes an assumption that all elements (rooms, sounds, items) of the map are of the same dimension
+                    string cellLine = line.Split('-')[1].Trim();            //Measures room element of the text file - see GDApp/App/Data/levelData.txt
+                                                                            //Makes an assumption that all elements (rooms, sounds, items) of the map are of the same dimension
                     cellLine = cellLine.Replace('|', ' ');
                     cellLine = cellLine.Replace(" ", string.Empty);
+
                     string[] cells = cellLine.Split(',');
 
                     //If the current amount of cells in is larger than the current x (amount of cells in a line)
@@ -1362,17 +1368,19 @@ namespace GDApp
             if (unbreakableBlockOpacityLevel > 1)
             {
                 collidablePrimitiveObject.ID = "Unbreakable Transparent Block";
+                collidablePrimitiveObject.EffectParameters.OriginalColor = Color.MintCream;
+                collidablePrimitiveObject.EffectParameters.DiffuseColor = Color.MintCream;
             }
             else
             {
                 collidablePrimitiveObject.ID = "Unbreakable Block";
+                collidablePrimitiveObject.EffectParameters.OriginalColor = Color.Black;
+                collidablePrimitiveObject.EffectParameters.DiffuseColor = Color.Black;
             }
 
             //Set values
             collidablePrimitiveObject.Transform = transform;
             collidablePrimitiveObject.EffectParameters.Alpha = AppData.StandardObjectOpacity / unbreakableBlockOpacityLevel;
-            collidablePrimitiveObject.EffectParameters.OriginalColor = Color.Black;
-            collidablePrimitiveObject.EffectParameters.DiffuseColor = Color.Black;
 
             //Add to object manager
             this.objectManager.Add(collidablePrimitiveObject);
@@ -1391,7 +1399,7 @@ namespace GDApp
             collidablePrimitiveObject.EffectParameters.DiffuseColor = Color.LightGreen;
 
             //Attach controllers
-            collidablePrimitiveObject.AttachController(new SpinController("Spin Controller", ControllerType.Spin, 1));
+            collidablePrimitiveObject.AttachController(new SpinController("Spin Controller", ControllerType.Spin, 0.5f));
 
             //Add to object manager
             this.objectManager.Add(collidablePrimitiveObject);
@@ -1491,18 +1499,22 @@ namespace GDApp
                 case 1:
                     #region Level 1
                     levelTrack = new Track3D(CurveLoopType.Constant);
-                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 0);
-                    
-                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, AppData.OrbitAngle / 2, this.trackCameraUp);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 0);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
                     levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
 
-                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, -AppData.OrbitAngle, this.trackCameraUp);
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
                     levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
 
-                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, AppData.OrbitAngle, this.trackCameraUp);
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
                     levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
-                    
-                    this.trackCameraUp = MatrixUtility.CalculateTargetUpVector(Axis.NegZ, -AppData.OrbitAngle / 2, this.trackCameraUp);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
                     levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
 
                     this.trackDictionary.Add("track_level_1", levelTrack);
@@ -1559,6 +1571,110 @@ namespace GDApp
 
                     this.trackDictionary.Add("track_level_3", levelTrack);
                     this.levelTrackTime[2] = 8;
+                    #endregion
+                    break;
+
+                case 4:
+                    #region Level 4
+                    levelTrack = new Track3D(CurveLoopType.Constant);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 0);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
+
+                    this.trackDictionary.Add("track_level_4", levelTrack);
+                    this.levelTrackTime[3] = 8;
+                    #endregion
+                    break;
+
+                case 5:
+                    #region Level 5
+                    levelTrack = new Track3D(CurveLoopType.Constant);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 0);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
+
+                    this.trackDictionary.Add("track_level_5", levelTrack);
+                    this.levelTrackTime[4] = 8;
+                    #endregion
+                    break;
+
+                case 6:
+                    #region Level 6
+                    levelTrack = new Track3D(CurveLoopType.Constant);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 0);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
+
+                    this.trackDictionary.Add("track_level_6", levelTrack);
+                    this.levelTrackTime[5] = 8;
+                    #endregion
+                    break;
+
+                case 7:
+                    #region Level 7
+                    levelTrack = new Track3D(CurveLoopType.Constant);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, Vector3.UnitY, 0);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 2);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 4);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 6);
+
+                    this.trackCameraPosition = MatrixUtility.CalculateTargetPositionVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraPosition, this.cameraOrbitPoint);
+                    this.trackCameraLook = MatrixUtility.CalculateTargetLookVector(Axis.NegY, AppData.OrbitAngle, this.trackCameraLook);
+                    levelTrack.Add(this.trackCameraPosition, this.trackCameraLook, this.trackCameraUp, 8);
+
+                    this.trackDictionary.Add("track_level_7", levelTrack);
+                    this.levelTrackTime[6] = 8;
                     #endregion
                     break;
             }
@@ -1839,11 +1955,34 @@ namespace GDApp
         #region Game State
         private void UpdateTextbox(GameTime gameTime)
         {
-            //Every x seconds
-            if (((int) gameTime.TotalGameTime.TotalMilliseconds % (AppData.TimePerMessage * 1000)) == 0)
+            //If the timer has expired, or if the game (gem count, current level, etc.) has been updated 
+            if ((((int) gameTime.TotalGameTime.TotalMilliseconds % (AppData.TimePerMessage * 1000)) == 0) || StateManager.GameUpdated)
             {
-                EventDispatcher.Publish(new EventData(EventActionType.SetActive, EventCategoryType.Textbox, new object[] { AppData.TextboxMessages[StateManager.CurrentTextInLoop] }));
-                StateManager.CurrentTextInLoop = (StateManager.CurrentTextInLoop + 1) % AppData.TextboxMessages.Length;
+                //Create an array of messages
+                //Previously stored externally in AppData, but needed to be updated in real-time
+                string[] messages = new string[] {
+                    "Press 'R' to reset",
+                    "Collect all gems to finish the level",
+                    "Gems remaining " + StateManager.GoalsRemaining,
+                    "Complete each level by reaching the purple orb",
+                    "Level " + StateManager.CurrentLevel,
+                    "Press 'Q' or 'E' to rotate",
+                    "Press 'W', 'A', 'S', or 'D' to orbit",
+                    "Gems remaining " + StateManager.GoalsRemaining,
+                    "Click on white blocks to break them",
+                    "Use the scroll wheel to zoom",
+                    "Level " + StateManager.CurrentLevel,
+                };
+
+                //If the timer has expired, select the next message
+                if (((int)gameTime.TotalGameTime.TotalMilliseconds % (AppData.TimePerMessage * 1000)) == 0)
+                {
+                    StateManager.CurrentTextInLoop = (StateManager.CurrentTextInLoop + 1) % messages.Length;
+                }
+
+                //Update the textbox
+                EventDispatcher.Publish(new EventData(EventActionType.SetActive, EventCategoryType.Textbox, new object[] { messages[StateManager.CurrentTextInLoop] }));
+                StateManager.GameUpdated = false;
             }
         }
 
@@ -1982,6 +2121,8 @@ namespace GDApp
             LoadLevelMap();
             InitializeSkyBox();
             InitializeCameras();
+
+            StateManager.GameUpdated = true;
         }
 
         private void GameWon()

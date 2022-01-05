@@ -32,6 +32,7 @@ Content\Assets\Textures\Primitives\diamond_texture.xnb
 Content\Assets\Textures\Primitives\box_texture.xnb
 Content\Assets\Textures\Primitives\quad_texture.xnb
 Content\Assets\Textures\UI\HUD\textbox.xnb
+Content\Assets\Textures\UI\Menu\Backgrounds\end_screen.xnb
 Content\Assets\Effects\Billboard.xnb
 Content\Assets\Audio\fall.xnb
 Content\Assets\Audio\select.xnb
@@ -47,7 +48,6 @@ Content\Assets\Audio\goal_004.xnb
 Content\Assets\Audio\incomplete.xnb
 Content\Assets\Audio\orbit.xnb
 Content\Assets\Audio\success.xnb
-Content\Assets\Textures\UI\Menu\Backgrounds\end_screen.xnb
 Content\Assets\Audio\Demo2DSound.xgs
 Content\Assets\Audio\WaveBank.xwb
 Content\Assets\Audio\SoundBank.xsb

@@ -112,8 +112,15 @@ namespace GDLibrary
 
         private void NotifyIntersection(GameTime gameTime, CollidablePrimitiveObject collidee)
         {
-            float distanceToObject = (float) Math.Round(Vector3.Distance(this.CameraManager.ActiveCamera.Transform.Translation, collidee.Transform.Translation), DefaultDistanceToTargetPrecision);
-            EventDispatcher.Publish(new EventData(EventActionType.OnObjectPicked, EventCategoryType.ObjectPicking, new object[] { collidee, distanceToObject }));
+            if (collidee.GetID().Contains("Breakable"))
+            {
+                float distanceToObject = (float) Math.Round(Vector3.Distance(this.CameraManager.ActiveCamera.Transform.Translation, collidee.Transform.Translation), DefaultDistanceToTargetPrecision);
+                EventDispatcher.Publish(new EventData(EventActionType.OnObjectPicked, EventCategoryType.ObjectPicking, new object[] { collidee, distanceToObject }));
+            }
+            else
+            {
+                NotifyNoIntersection();
+            }
         }
 
         private void HandleIntersection(GameTime gameTime, CollidablePrimitiveObject collidee)

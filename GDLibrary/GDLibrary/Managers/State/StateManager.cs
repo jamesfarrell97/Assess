@@ -38,7 +38,8 @@ namespace GDLibrary
         public static bool PlayerDied { get; set; }
         public static bool LevelClear { get; set; }
         public static bool FinishedTracking { get; set; }
-        public static bool IncompletePlayed { get; internal set; }
+        public static bool IncompletePlayed { get; set; }
+        public static bool GameUpdated { get; set; }
         #endregion
 
         #region Constructor
